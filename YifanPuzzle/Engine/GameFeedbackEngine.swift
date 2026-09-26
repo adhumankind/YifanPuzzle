@@ -145,7 +145,7 @@ public final class GameFeedbackEngine {
         var ds = dataSize; data.append(Data(bytes: &ds, count: 4))
 
         samples.withUnsafeBytes { buffer in
-            data.append(buffer)
+            data.append(contentsOf: buffer)
         }
 
         return try? AVAudioPlayer(data: data)
