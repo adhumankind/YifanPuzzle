@@ -85,6 +85,10 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
             }
         }
     }
+
+    // MARK: - 布局与初始化
+
+    private func setupLayoutMetrics() {
         let topBarInset: CGFloat = 60
         let bottomTrayInset: CGFloat = 90
         let safeHeight = size.height - topBarInset - bottomTrayInset
