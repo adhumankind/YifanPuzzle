@@ -61,11 +61,13 @@ public struct LevelSelectView: View {
                             let lvl = config.levels[idx]
                             let unlocked = ProgressManager.shared.isLevelUnlocked(lvl)
 
-                            Button {
-                                if unlocked {
-                                    selectedLevelIndex = idx
-                                }
-                            } label: {
+                                Button {
+                                    if unlocked {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            selectedLevelIndex = idx
+                                        }
+                                    }
+                                } label: {
                                 HStack(spacing: 6) {
                                     if !unlocked {
                                         Image(systemName: "lock.fill").font(.caption)
