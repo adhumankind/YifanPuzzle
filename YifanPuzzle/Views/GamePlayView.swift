@@ -162,8 +162,13 @@ public struct GamePlayView: View {
                     elapsedTime += 1
                 }
             }
-            .sheet(isPresented: $showingSettings) {
+            .sheet(isPresented: $showingSettings, onDismiss: {
+                timerActive = true
+            }) {
                 SettingsView()
+                    .onAppear {
+                        timerActive = false
+                    }
             }
             .onChange(of: GameSettings.shared.allowFreeRotation) { allow in
                 scene?.applyRotationSettingChanged(allowFree: allow)
