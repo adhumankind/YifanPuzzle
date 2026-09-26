@@ -122,7 +122,7 @@ public final class PuzzleMeshGenerator {
                 if c == 0 {
                     left = .flat
                 } else {
-                    verticalEdges[r][c - 1].inverted
+                    left = verticalEdges[r][c - 1].inverted
                 }
 
                 // Right
@@ -130,7 +130,7 @@ public final class PuzzleMeshGenerator {
                 if c == columns - 1 {
                     right = .flat
                 } else {
-                    verticalEdges[r][c]
+                    right = verticalEdges[r][c]
                 }
 
                 let edges = PieceEdges(top: top, right: right, bottom: bottom, left: left)
