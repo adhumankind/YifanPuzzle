@@ -78,7 +78,9 @@ public struct GamePlayView: View {
 
                         // 原图预览按钮
                         Button {
-                            showingPreview.toggle()
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                showingPreview.toggle()
+                            }
                         } label: {
                             HStack(spacing: 4) {
                                 Image(systemName: "eye.fill")
@@ -114,7 +116,11 @@ public struct GamePlayView: View {
                 if showingPreview {
                     ZStack {
                         Color.black.opacity(0.8).ignoresSafeArea()
-                            .onTapGesture { showingPreview = false }
+                            .onTapGesture {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    showingPreview = false
+                                }
+                            }
 
                         VStack(spacing: 12) {
                             if let uiImg = PuzzleImageRepository.shared.loadImage(for: imageItem) {
@@ -126,7 +132,9 @@ public struct GamePlayView: View {
                                     .shadow(radius: 20)
                             }
                             Button("关闭原图") {
-                                showingPreview = false
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    showingPreview = false
+                                }
                             }
                             .font(.system(size: 14, weight: .bold))
                             .padding(.horizontal, 20)
@@ -136,6 +144,7 @@ public struct GamePlayView: View {
                             .cornerRadius(10)
                         }
                     }
+                    .transition(.opacity)
                 }
 
                 // 胜利结算浮层
