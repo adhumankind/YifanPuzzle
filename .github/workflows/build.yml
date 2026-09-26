@@ -33,6 +33,9 @@ jobs:
       - name: Generate Xcode Project
         run: |
           xcodegen generate --spec project.yml
+          # 将 XcodeGen 默认生成的 77 (Xcode 16) 降级为 56 (Xcode 15 兼容模式)
+          sed -i '' 's/objectVersion = 77;/objectVersion = 56;/g' YifanPuzzle.xcodeproj/project.pbxproj || sed -i 's/objectVersion = 77;/objectVersion = 56;/g' YifanPuzzle.xcodeproj/project.pbxproj
+          grep "objectVersion" YifanPuzzle.xcodeproj/project.pbxproj
           ls -la YifanPuzzle.xcodeproj
 
       - name: Run Unit Tests
