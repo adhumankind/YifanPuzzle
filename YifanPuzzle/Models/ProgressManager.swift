@@ -23,6 +23,7 @@ public final class ProgressManager {
 
     private let userDefaultsKey = "com.yifan.puzzle.records"
     private var records: [String: LevelRecord] = [:] // key: "\(imageId)_\(levelId)"
+    private let lock = NSLock()
 
     private init() {
         loadRecords()
@@ -33,6 +34,8 @@ public final class ProgressManager {
     }
 
     private func loadRecords() {
+        lock.lock()
+        defer { lock.unlock() }
         if let data = UserDefaults.standard.data(forKey: userDefaultsKey),
            let decoded = try? JSONDecoder().decode([String: LevelRecord].self, from: data) {
             self.records = decoded
@@ -46,10 +49,14 @@ public final class ProgressManager {
     }
 
     public func getRecord(imageId: String, levelId: Int) -> LevelRecord? {
+        lock.lock()
+        defer { lock.unlock() }
         return records[recordKey(imageId: imageId, levelId: levelId)]
     }
 
     public func markCompleted(imageId: String, levelId: Int, elapsedSeconds: TimeInterval) {
+        lock.lock()
+        defer { lock.unlock() }
         let key = recordKey(imageId: imageId, levelId: levelId)
         var record = records[key] ?? LevelRecord(imageId: imageId, levelId: levelId)
         record.isCompleted = true
@@ -63,6 +70,8 @@ public final class ProgressManager {
 
     /// 计算已完成的总关卡星数（用于判断下一等级解锁）
     public func completedCount() -> Int {
+        lock.lock()
+        defer { lock.unlock() }
         return records.values.filter { $0.isCompleted }.count
     }
 
@@ -74,6 +83,8 @@ public final class ProgressManager {
 
     /// 重置所有进度
     public func resetAllProgress() {
+        lock.lock()
+        defer { lock.unlock() }
         records.removeAll()
         UserDefaults.standard.removeObject(forKey: userDefaultsKey)
     }

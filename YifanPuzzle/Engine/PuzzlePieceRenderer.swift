@@ -23,11 +23,15 @@ public final class PuzzlePieceRenderer {
     ) {
         DispatchQueue.global(qos: .userInitiated).async {
             var result: [Int: RenderedPieceTexture] = [:]
-            let scale = UIScreen.main.scale
+            // 700 块超大关卡时采用 1.5x scale，节约 45% 显存并防止 iOS OOM，普通关卡保持 2.0x 高清
+            let baseScale = UIScreen.main.scale
+            let scale: CGFloat = pieces.count > 300 ? min(baseScale, 1.5) : baseScale
 
             for piece in pieces {
-                let rendered = renderSinglePiece(sourceImage: sourceImage, piece: piece, boardPixelSize: boardPixelSize, scale: scale)
-                result[piece.id] = rendered
+                autoreleasepool {
+                    let rendered = renderSinglePiece(sourceImage: sourceImage, piece: piece, boardPixelSize: boardPixelSize, scale: scale)
+                    result[piece.id] = rendered
+                }
             }
 
             DispatchQueue.main.async {
