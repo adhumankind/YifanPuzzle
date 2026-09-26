@@ -8,6 +8,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+  packages: write
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -80,8 +84,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: build/YifanPuzzle-unsigned.ipa
-          generate_release_notes: true
-          title: "一凡拼图 发布 ${{ github.ref_name }}"
+          name: "一凡拼图 发布 ${{ github.ref_name }}"
           body: |
             ### 一凡拼图 (Yifan Puzzle) iOS 越狱/自签安装包
 
