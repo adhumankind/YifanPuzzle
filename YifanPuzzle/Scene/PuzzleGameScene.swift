@@ -1,0 +1,427 @@
+import SpriteKit
+import UIKit
+
+/// 拼图游戏核心主场景（纯横屏驱动，极致手感与物理反馈）
+public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
+
+    // 核心数据模型
+    public let imageItem: PuzzleImageItem
+    public let level: PuzzleLevel
+    public let sourceImage: UIImage
+
+    // 场景节点
+    public private(set) var boardBackgroundNode: SKShapeNode!
+    public private(set) var boardOutlineNode: SKShapeNode!
+    public private(set) var ghostImageNode: SKSpriteNode!
+    public private(set) var dividerNode: SKSpriteNode!
+    public private(set) var dividerHandleNode: SKShapeNode!
+    public private(set) var trayNode: StorageTrayNode!
+
+    // 拼图碎片节点集合
+    public private(set) var pieceNodes: [Int: PuzzlePieceNode] = [:]
+    public private(set) var pieceDatas: [PuzzlePieceData] = []
+
+    // 布局度量
+    public private(set) var currentSplitRatio: CGFloat = 0.75 // 默认左 75%，右 25%
+    public private(set) var boardRect: CGRect = .zero
+    public private(set) var pileRect: CGRect = .zero
+
+    // 交互拖拽状态
+    private var activeDraggedPieces: [PuzzlePieceNode] = []
+    private var dragStartTouchPoint: CGPoint = .zero
+    private var dragStartPiecePositions: [Int: CGPoint] = [:]
+    private var isDraggingDivider: Bool = false
+    private var highestZIndex: CGFloat = 100
+
+    // 外部回调
+    public var onProgressUpdate: ((Int, Int) -> Void)? // (已拼好数, 总数)
+    public var onGameCompleted: ((TimeInterval) -> Void)?
+
+    // 计时器与完成标记
+    public private(set) var startTime: Date = Date()
+    public private(set) var isCompleted: Bool = false
+
+    public init(size: CGSize, imageItem: PuzzleImageItem, level: PuzzleLevel, sourceImage: UIImage) {
+        self.imageItem = imageItem
+        self.level = level
+        self.sourceImage = sourceImage
+        self.currentSplitRatio = CGFloat(GameSettings.shared.splitRatio)
+        super.init(size: size)
+        self.scaleMode = .resizeFill
+        self.backgroundColor = UIColor(red: 0.14, green: 0.16, blue: 0.20, alpha: 1.0)
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    public override func didMove(to view: SKView) {
+        super.didMove(to: view)
+        setupLayoutMetrics()
+        setupBackgroundAndBoard()
+        setupDivider()
+        setupTray()
+        setupParallax()
+        buildAndDistributePieces()
+        setupGestureRecognizers(on: view)
+    }
+
+    // MARK: - 布局与初始化
+
+    private func setupLayoutMetrics() {
+        let topBarInset: CGFloat = 60
+        let bottomTrayInset: CGFloat = 90
+        let safeHeight = size.height - topBarInset - bottomTrayInset
+
+        let leftWidth = size.width * currentSplitRatio
+        let rightWidth = size.width - leftWidth
+
+        // 计算 16:9 的拼图板在左侧区域的最大居中 Rect
+        let padding: CGFloat = 20
+        let availBoardW = leftWidth - padding * 2
+        let availBoardH = safeHeight - padding * 2
+
+        var boardW = availBoardW
+        var boardH = boardW / (16.0 / 9.0)
+        if boardH > availBoardH {
+            boardH = availBoardH
+            boardW = boardH * (16.0 / 9.0)
+        }
+
+        let boardOriginX = padding + (availBoardW - boardW) / 2
+        let boardOriginY = bottomTrayInset + padding + (availBoardH - boardH) / 2
+        self.boardRect = CGRect(x: boardOriginX, y: boardOriginY, width: boardW, height: boardH)
+
+        // 右侧碎片堆放区
+        self.pileRect = CGRect(x: leftWidth + 10, y: bottomTrayInset + 10, width: rightWidth - 20, height: safeHeight)
+    }
+
+    private func setupBackgroundAndBoard() {
+        // 木纹/绒布桌面底色
+        let matNode = SKShapeNode(rect: CGRect(origin: .zero, size: size))
+        matNode.fillColor = UIColor(red: 0.16, green: 0.18, blue: 0.22, alpha: 1.0)
+        matNode.strokeColor = .clear
+        matNode.zPosition = -10
+        addChild(matNode)
+
+        // 拼图底板底座
+        boardBackgroundNode = SKShapeNode(rect: boardRect, cornerRadius: 8)
+        boardBackgroundNode.fillColor = UIColor(red: 0.10, green: 0.12, blue: 0.15, alpha: 0.95)
+        boardBackgroundNode.strokeColor = UIColor(white: 1.0, alpha: 0.15)
+        boardBackgroundNode.lineWidth = 2.0
+        boardBackgroundNode.zPosition = 1
+        addChild(boardBackgroundNode)
+
+        // 幽灵原图（按设置可开启作为微弱半透明底图参考）
+        ghostImageNode = SKSpriteNode(texture: SKTexture(image: sourceImage), size: boardRect.size)
+        ghostImageNode.position = CGPoint(x: boardRect.midX, y: boardRect.midY)
+        ghostImageNode.zPosition = 2
+        ghostImageNode.alpha = GameSettings.shared.showGhostOutline ? 0.20 : 0.0
+        addChild(ghostImageNode)
+
+        // 拼图边缘外框线
+        boardOutlineNode = SKShapeNode(rect: boardRect, cornerRadius: 8)
+        boardOutlineNode.fillColor = .clear
+        boardOutlineNode.strokeColor = UIColor(red: 0.35, green: 0.65, blue: 0.95, alpha: 0.45)
+        boardOutlineNode.lineWidth = 1.5
+        boardOutlineNode.zPosition = 3
+        addChild(boardOutlineNode)
+    }
+
+    private func setupDivider() {
+        let dividerX = size.width * currentSplitRatio
+        dividerNode = SKSpriteNode(color: UIColor(white: 1.0, alpha: 0.18), size: CGSize(width: 4, height: size.height))
+        dividerNode.position = CGPoint(x: dividerX, y: size.height / 2)
+        dividerNode.zPosition = 40
+        addChild(dividerNode)
+
+        // 分隔条中间手柄（可触摸抓取区）
+        dividerHandleNode = SKShapeNode(circleOfRadius: 18)
+        dividerHandleNode.position = CGPoint(x: dividerX, y: size.height / 2)
+        dividerHandleNode.fillColor = UIColor(red: 0.25, green: 0.55, blue: 0.95, alpha: 0.9)
+        dividerHandleNode.strokeColor = UIColor.white
+        dividerHandleNode.lineWidth = 2.0
+        dividerHandleNode.zPosition = 41
+        addChild(dividerHandleNode)
+    }
+
+    private func setupTray() {
+        let trayWidth = min(size.width * 0.58, 480)
+        trayNode = StorageTrayNode(trayWidth: trayWidth, trayHeight: 76)
+        trayNode.position = CGPoint(x: size.width * 0.42, y: 45)
+        addChild(trayNode)
+    }
+
+    private func setupParallax() {
+        if GameSettings.shared.parallax3DEnabled {
+            ParallaxMotionManager.shared.start()
+            ParallaxMotionManager.shared.onMotionUpdate = { [weak self] roll, pitch in
+                guard let self = self else { return }
+                // 微弱微移提升空间层级 3D 感
+                let maxOffset: CGFloat = 8.0
+                let offsetX = min(max(roll * 10, -maxOffset), maxOffset)
+                let offsetY = min(max(pitch * 10, -maxOffset), maxOffset)
+                self.boardOutlineNode.position = CGPoint(x: offsetX * 0.4, y: offsetY * 0.4)
+                self.trayNode.position.x = (self.size.width * 0.42) + offsetX * 0.6
+            }
+        }
+    }
+
+    // MARK: - 切割与碎片构建
+
+    private func buildAndDistributePieces() {
+        // 使用图片ID的哈希作为一致性随机种子
+        let seed = UInt64(abs(imageItem.id.hashValue))
+        self.pieceDatas = PuzzleMeshGenerator.generateGrid(columns: level.gridColumns, rows: level.gridRows, seed: seed)
+
+        // 异步渲染高质量碎片 3D 贴图
+        PuzzlePieceRenderer.renderAllPieces(sourceImage: sourceImage, pieces: pieceDatas, boardPixelSize: boardRect.size) { [weak self] renderedDict in
+            guard let self = self else { return }
+            self.distributePiecesInPile(renderedDict: renderedDict)
+        }
+    }
+
+    private func distributePiecesInPile(renderedDict: [Int: PuzzlePieceRenderer.RenderedPieceTexture]) {
+        let allowRotation = GameSettings.shared.allowFreeRotation
+        var rng = SeededRandom(seed: 1234567)
+
+        for pieceData in pieceDatas {
+            guard let tex = renderedDict[pieceData.id] else { continue }
+            let node = PuzzlePieceNode(pieceData: pieceData, textures: tex)
+
+            // 计算理论板上坐标（原点左下角）
+            let correctX = boardRect.origin.x + pieceData.targetGridNormalized.x * boardRect.width
+            let correctY = boardRect.origin.y + (1.0 - pieceData.targetGridNormalized.y) * boardRect.height
+            node.correctBoardPosition = CGPoint(x: correctX, y: correctY)
+
+            // 初始随机散落在右侧堆放区
+            let randomX = pileRect.origin.x + CGFloat(rng.next() % 1000) / 1000.0 * pileRect.width
+            let randomY = pileRect.origin.y + CGFloat(rng.next() % 1000) / 1000.0 * pileRect.height
+            node.position = CGPoint(x: randomX, y: randomY)
+
+            // 自由旋转开关逻辑
+            if allowRotation {
+                let randomAngle = (CGFloat(rng.next() % 360) - 180.0) * (.pi / 180.0)
+                node.zRotation = randomAngle
+            } else {
+                node.zRotation = 0
+            }
+
+            node.zPosition = 20
+            addChild(node)
+            pieceNodes[pieceData.id] = node
+        }
+
+        onProgressUpdate?(0, pieceDatas.count)
+    }
+
+    // MARK: - 触摸手势交互
+
+    private func setupGestureRecognizers(on view: SKView) {
+        // 双指旋转手势（仅当允许自由旋转开启时触发）
+        let rotationGesture = UIRotationGestureRecognizer(target: self, action: #selector(handleRotationGesture(_:)))
+        rotationGesture.delegate = self
+        view.addGestureRecognizer(rotationGesture)
+    }
+
+    @objc private func handleRotationGesture(_ gesture: UIRotationGestureRecognizer) {
+        guard GameSettings.shared.allowFreeRotation else { return }
+        guard !activeDraggedPieces.isEmpty else { return }
+
+        if gesture.state == .changed {
+            let rotationDelta = gesture.rotation
+            for piece in activeDraggedPieces {
+                piece.zRotation += rotationDelta
+            }
+            gesture.rotation = 0
+        }
+    }
+
+    public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let touchLocation = touch.location(in: self)
+
+        // 1. 判断是否触摸到区域滑块
+        if abs(touchLocation.x - dividerNode.position.x) < 25 {
+            isDraggingDivider = true
+            return
+        }
+
+        // 2. 判断是否点击托盘中的碎片
+        for piece in pieceNodes.values where piece.traySlotIndex != nil {
+            if piece.contains(touchLocation) {
+                trayNode.removePiece(fromSlot: piece.traySlotIndex!)
+                piece.animatePickup()
+                beginDragging(pieces: [piece], at: touchLocation)
+                return
+            }
+        }
+
+        // 3. 拾取桌面上的拼图碎片（选取顶层未拼好的碎片，带同组联动）
+        let touchedNodes = nodes(at: touchLocation)
+        var hitPiece: PuzzlePieceNode? = nil
+
+        for n in touchedNodes {
+            if let p = n as? PuzzlePieceNode, !p.isPlaced {
+                hitPiece = p
+                break
+            } else if let p = n.parent as? PuzzlePieceNode, !p.isPlaced {
+                hitPiece = p
+                break
+            }
+        }
+
+        if let piece = hitPiece {
+            // 找出属于同一 groupId 的所有已咬合联动的碎片一起拖动
+            let groupPieces = pieceNodes.values.filter { $0.groupId == piece.groupId && !$0.isPlaced }
+            highestZIndex += 10
+            for p in groupPieces {
+                p.zPosition = highestZIndex
+                p.animatePickup()
+            }
+            GameFeedbackEngine.shared.triggerPickup()
+            beginDragging(pieces: groupPieces, at: touchLocation)
+        }
+    }
+
+    private func beginDragging(pieces: [PuzzlePieceNode], at point: CGPoint) {
+        activeDraggedPieces = pieces
+        dragStartTouchPoint = point
+        dragStartPiecePositions.removeAll()
+        for p in pieces {
+            dragStartPiecePositions[p.pieceData.id] = p.position
+        }
+    }
+
+    public override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let touchLocation = touch.location(in: self)
+
+        // 拖动区域滑块
+        if isDraggingDivider {
+            let minX = size.width * 0.55
+            let maxX = size.width * 0.85
+            let clampedX = min(max(touchLocation.x, minX), maxX)
+            currentSplitRatio = clampedX / size.width
+            GameSettings.shared.splitRatio = Double(currentSplitRatio)
+            dividerNode.position.x = clampedX
+            dividerHandleNode.position.x = clampedX
+            return
+        }
+
+        // 拖动选中的拼图或成组拼图
+        guard !activeDraggedPieces.isEmpty else { return }
+        let deltaX = touchLocation.x - dragStartTouchPoint.x
+        let deltaY = touchLocation.y - dragStartTouchPoint.y
+
+        for piece in activeDraggedPieces {
+            if let startPos = dragStartPiecePositions[piece.pieceData.id] {
+                piece.position = CGPoint(x: startPos.x + deltaX, y: startPos.y + deltaY)
+            }
+        }
+    }
+
+    public override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let touchLocation = touch.location(in: self)
+
+        if isDraggingDivider {
+            isDraggingDivider = false
+            return
+        }
+
+        guard !activeDraggedPieces.isEmpty else { return }
+        let dragged = activeDraggedPieces
+        activeDraggedPieces = []
+
+        // A. 检查是否拖入了底部的 5 格临时存放托盘（仅单块碎片允许存入）
+        if dragged.count == 1, let singlePiece = dragged.first {
+            if let slotIndex = trayNode.hitSlotIndex(at: touchLocation) {
+                trayNode.placePiece(singlePiece, intoSlot: slotIndex)
+                GameFeedbackEngine.shared.triggerDrop()
+                return
+            }
+        }
+
+        // B. 检查是否与正确板位磁吸
+        var anySnapped = false
+        for piece in dragged {
+            let isSnap = SnapEngine.checkSnap(
+                currentPos: piece.position,
+                targetPos: piece.correctBoardPosition,
+                pieceSize: CGSize(width: boardRect.width * piece.pieceData.normalizedSize.width, height: boardRect.height * piece.pieceData.normalizedSize.height),
+                currentRotation: piece.zRotation,
+                allowFreeRotation: GameSettings.shared.allowFreeRotation
+            )
+
+            if isSnap {
+                anySnapped = true
+                break
+            }
+        }
+
+        if anySnapped {
+            // 整组一同吸附锁定到正确位置
+            for piece in dragged {
+                piece.animateSnap(to: piece.correctBoardPosition) { [weak self] in
+                    self?.checkGameCompletion()
+                }
+            }
+            GameFeedbackEngine.shared.triggerSnap()
+        } else {
+            // C. 检查未归位碎片之间是否有相邻咬合成组
+            checkPieceToPieceMerge(draggedPieces: dragged)
+            for piece in dragged {
+                piece.animateDrop()
+            }
+            GameFeedbackEngine.shared.triggerDrop()
+        }
+    }
+
+    private func checkPieceToPieceMerge(draggedPieces: [PuzzlePieceNode]) {
+        let pieceSize = CGSize(
+            width: boardRect.width * (1.0 / CGFloat(level.gridColumns)),
+            height: boardRect.height * (1.0 / CGFloat(level.gridRows))
+        )
+        let allowRotation = GameSettings.shared.allowFreeRotation
+
+        for dragged in draggedPieces {
+            for other in pieceNodes.values where !other.isPlaced && other.groupId != dragged.groupId && other.traySlotIndex == nil {
+                let snap = SnapEngine.checkAdjacentPiecesSnap(
+                    pieceA: dragged.pieceData, posA: dragged.position, rotA: dragged.zRotation,
+                    pieceB: other.pieceData, posB: other.position, rotB: other.zRotation,
+                    pieceSize: pieceSize, allowFreeRotation: allowRotation
+                )
+
+                if snap {
+                    // 合并成同一组
+                    let targetGroupId = dragged.groupId
+                    let oldGroupId = other.groupId
+                    for p in pieceNodes.values where p.groupId == oldGroupId {
+                        p.groupId = targetGroupId
+                    }
+                    GameFeedbackEngine.shared.triggerSnap()
+                    break
+                }
+            }
+        }
+    }
+
+    private func checkGameCompletion() {
+        let placedCount = pieceNodes.values.filter { $0.isPlaced }.count
+        onProgressUpdate?(placedCount, pieceDatas.count)
+
+        if placedCount == pieceDatas.count && !isCompleted {
+            isCompleted = true
+            let elapsed = Date().timeIntervalSince(startTime)
+            ProgressManager.shared.markCompleted(imageId: imageItem.id, levelId: level.id, elapsedSeconds: elapsed)
+            GameFeedbackEngine.shared.triggerVictory()
+            onGameCompleted?(elapsed)
+        }
+    }
+
+    public override func willMove(from view: SKView) {
+        super.willMove(from: view)
+        ParallaxMotionManager.shared.stop()
+    }
+}

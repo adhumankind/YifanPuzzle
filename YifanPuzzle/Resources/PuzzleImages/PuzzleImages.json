@@ -1,0 +1,92 @@
+[
+  {
+    "id": "puzzle_01",
+    "title": "春山樱花",
+    "theme": "四季物语",
+    "description": "暖风拂过樱花树漫山遍野，粉蓝渐变的天空与翠绿山坡相映成趣。",
+    "localFileName": "puzzle_01.png",
+    "tags": ["天空渐变", "树木", "春天", "樱花"],
+    "author": "AI 艺术工坊"
+  },
+  {
+    "id": "puzzle_02",
+    "title": "夏日湖泊",
+    "theme": "四季物语",
+    "description": "静谧澄澈的高山湖泊，松林郁郁葱葱，白帆在深蓝渐变天空下驶过。",
+    "localFileName": "puzzle_02.png",
+    "tags": ["天空渐变", "树木", "夏天", "湖泊"],
+    "author": "AI 艺术工坊"
+  },
+  {
+    "id": "puzzle_03",
+    "title": "秋叶溪谷",
+    "theme": "四季物语",
+    "description": "火红与橙黄的枫叶层林尽染，古石桥倒映在金黄渐变的溪水与暮色中。",
+    "localFileName": "puzzle_03.png",
+    "tags": ["天空渐变", "树木", "秋天", "枫叶"],
+    "author": "AI 艺术工坊"
+  },
+  {
+    "id": "puzzle_04",
+    "title": "冬雪松林",
+    "theme": "四季物语",
+    "description": "银装素裹的宁静松林，小木屋窗前亮起暖光，紫黛色夜空星光微烁。",
+    "localFileName": "puzzle_04.png",
+    "tags": ["天空渐变", "树木", "冬天", "雪景"],
+    "author": "AI 艺术工坊"
+  },
+  {
+    "id": "puzzle_05",
+    "title": "落日沙滩",
+    "theme": "热带漫步",
+    "description": "椰影婆娑的大海之滨，橘粉晚霞铺满天空，海风带来温暖的气息。",
+    "localFileName": "puzzle_05.png",
+    "tags": ["天空渐变", "树木", "晚霞", "椰林"],
+    "author": "AI 艺术工坊"
+  },
+  {
+    "id": "puzzle_06",
+    "title": "朝雾梯田",
+    "theme": "绿野仙境",
+    "description": "晨曦微露的层层梯田，薄雾缭绕在山腰，古老神树在朝阳下舒展枝桠。",
+    "localFileName": "puzzle_06.png",
+    "tags": ["天空渐变", "树木", "晨雾", "梯田"],
+    "author": "AI 艺术工坊"
+  },
+  {
+    "id": "puzzle_07",
+    "title": "星夜露营",
+    "theme": "奇幻森林",
+    "description": "深蓝渐变穹顶挂着弯弯金月，微光萤火虫飞舞，帐篷中透出脉脉温情。",
+    "localFileName": "puzzle_07.png",
+    "tags": ["天空渐变", "树木", "星空", "露营"],
+    "author": "AI 艺术工坊"
+  },
+  {
+    "id": "puzzle_08",
+    "title": "彩虹花田",
+    "theme": "绿野仙境",
+    "description": "万紫千红的野花盛开在阳光山谷，巨大神木守护着横跨天际的七彩弧线。",
+    "localFileName": "puzzle_08.png",
+    "tags": ["天空渐变", "树木", "彩虹", "花海"],
+    "author": "AI 艺术工坊"
+  },
+  {
+    "id": "puzzle_09",
+    "title": "雨林飞瀑",
+    "theme": "秘境探险",
+    "description": "热带雨林中的清凉瀑布注入碧潭，大嘴鸟在古藤树冠上静静伫立。",
+    "localFileName": "puzzle_09.png",
+    "tags": ["天空渐变", "树木", "瀑布", "雨林"],
+    "author": "AI 艺术工坊"
+  },
+  {
+    "id": "puzzle_10",
+    "title": "金色田园",
+    "theme": "大地之歌",
+    "description": "丰收的金色麦浪随风起伏，红色谷仓立在大树旁，晚霞泛着暖金光辉。",
+    "localFileName": "puzzle_10.png",
+    "tags": ["天空渐变", "树木", "麦浪", "田园"],
+    "author": "AI 艺术工坊"
+  }
+]

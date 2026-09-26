@@ -1,0 +1,11 @@
+# Build & Caches
+build/
+DerivedData/
+*.xcarchive
+*.ipa
+.DS_Store
+
+# Temporary & Logs
+*.log
+generated_images/
+scripts/gh.zip
