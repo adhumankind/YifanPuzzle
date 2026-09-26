@@ -32,6 +32,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
     private var dragStartPiecePositions: [Int: CGPoint] = [:]
     private var isDraggingDivider: Bool = false
     private var highestZIndex: CGFloat = 100
+    private var rotationGestureRecognizer: UIRotationGestureRecognizer?
 
     // 外部回调
     public var onProgressUpdate: ((Int, Int) -> Void)? // (已拼好数, 总数)
@@ -66,9 +67,24 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         setupGestureRecognizers(on: view)
     }
 
-    // MARK: - 布局与初始化
+    public func updateSplitRatio(_ newRatio: CGFloat) {
+        currentSplitRatio = newRatio
+        setupLayoutMetrics()
+        boardBackgroundNode.path = UIBezierPath(roundedRect: boardRect, cornerRadius: 8).cgPath
+        ghostImageNode.size = boardRect.size
+        ghostImageNode.position = CGPoint(x: boardRect.midX, y: boardRect.midY)
+        boardOutlineNode.path = UIBezierPath(roundedRect: boardRect, cornerRadius: 8).cgPath
 
-    private func setupLayoutMetrics() {
+        // 更新所有已拼好碎片与理论板位的锚定坐标
+        for piece in pieceNodes.values {
+            let correctX = boardRect.origin.x + piece.pieceData.targetGridNormalized.x * boardRect.width
+            let correctY = boardRect.origin.y + (1.0 - piece.pieceData.targetGridNormalized.y) * boardRect.height
+            piece.correctBoardPosition = CGPoint(x: correctX, y: correctY)
+            if piece.isPlaced {
+                piece.position = piece.correctBoardPosition
+            }
+        }
+    }
         let topBarInset: CGFloat = 60
         let bottomTrayInset: CGFloat = 90
         let safeHeight = size.height - topBarInset - bottomTrayInset
@@ -222,6 +238,11 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         let rotationGesture = UIRotationGestureRecognizer(target: self, action: #selector(handleRotationGesture(_:)))
         rotationGesture.delegate = self
         view.addGestureRecognizer(rotationGesture)
+        self.rotationGestureRecognizer = rotationGesture
+    }
+
+    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        return true
     }
 
     @objc private func handleRotationGesture(_ gesture: UIRotationGestureRecognizer) {
@@ -302,10 +323,11 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
             let minX = size.width * 0.55
             let maxX = size.width * 0.85
             let clampedX = min(max(touchLocation.x, minX), maxX)
-            currentSplitRatio = clampedX / size.width
-            GameSettings.shared.splitRatio = Double(currentSplitRatio)
+            let newRatio = clampedX / size.width
+            GameSettings.shared.splitRatio = Double(newRatio)
             dividerNode.position.x = clampedX
             dividerHandleNode.position.x = clampedX
+            updateSplitRatio(newRatio)
             return
         }
 
@@ -423,5 +445,9 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
     public override func willMove(from view: SKView) {
         super.willMove(from: view)
         ParallaxMotionManager.shared.stop()
+        if let gesture = rotationGestureRecognizer {
+            view.removeGestureRecognizer(gesture)
+            self.rotationGestureRecognizer = nil
+        }
     }
 }

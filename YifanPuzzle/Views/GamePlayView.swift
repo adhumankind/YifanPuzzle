@@ -153,6 +153,7 @@ public struct GamePlayView: View {
     }
 
     private func setupScene(size: CGSize) {
+        guard size.width > 0 && size.height > 0 else { return }
         let img = PuzzleImageRepository.shared.loadImage(for: imageItem) ?? PuzzleImageRepository.generateFallbackImage(title: imageItem.title)
         let s = PuzzleGameScene(size: size, imageItem: imageItem, level: level, sourceImage: img)
         self.placedCount = 0
@@ -160,12 +161,14 @@ public struct GamePlayView: View {
         self.elapsedTime = 0
         self.timerActive = true
 
-        s.onProgressUpdate = { placed, total in
+        s.onProgressUpdate = { [weak s] placed, total in
+            _ = s
             self.placedCount = placed
             self.totalCount = total
         }
 
-        s.onGameCompleted = { elapsed in
+        s.onGameCompleted = { [weak s] elapsed in
+            _ = s
             self.timerActive = false
             self.finalElapsed = elapsed
             self.showingVictory = true
