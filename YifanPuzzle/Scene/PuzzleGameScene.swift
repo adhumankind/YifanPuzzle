@@ -269,6 +269,20 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         }
     }
 
+    public func applyGhostOutlineSettingChanged(showGhost: Bool) {
+        ghostImageNode?.run(SKAction.fadeAlpha(to: showGhost ? 0.20 : 0.0, duration: 0.2))
+    }
+
+    public func applyParallaxSettingChanged(enabled: Bool) {
+        if enabled {
+            ParallaxMotionManager.shared.start()
+        } else {
+            ParallaxMotionManager.shared.stop()
+            self.boardOutlineNode?.position = .zero
+            self.trayNode?.position.x = self.size.width * 0.42
+        }
+    }
+
     // MARK: - 触摸手势交互
 
     private func setupGestureRecognizers(on view: SKView) {

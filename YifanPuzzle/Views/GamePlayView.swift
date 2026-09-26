@@ -168,6 +168,12 @@ public struct GamePlayView: View {
             .onChange(of: GameSettings.shared.allowFreeRotation) { allow in
                 scene?.applyRotationSettingChanged(allowFree: allow)
             }
+            .onChange(of: GameSettings.shared.showGhostOutline) { show in
+                scene?.applyGhostOutlineSettingChanged(showGhost: show)
+            }
+            .onChange(of: GameSettings.shared.parallax3DEnabled) { enabled in
+                scene?.applyParallaxSettingChanged(enabled: enabled)
+            }
         }
     }
 
