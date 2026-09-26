@@ -13,6 +13,7 @@ public struct GamePlayView: View {
     @State private var timerActive = true
     @State private var showingPreview = false
     @State private var showingVictory = false
+    @State private var showingSettings = false
     @State private var finalElapsed: TimeInterval = 0
 
     // 内部持有的 SpriteKit 游戏场景
@@ -90,6 +91,18 @@ public struct GamePlayView: View {
                             .background(Color.blue.opacity(0.85))
                             .cornerRadius(12)
                         }
+
+                        // 局中快速设置按钮（随时切换自由角度/音效）
+                        Button {
+                            showingSettings = true
+                        } label: {
+                            Image(systemName: "gearshape.fill")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 36, height: 36)
+                                .background(Color.white.opacity(0.18))
+                                .clipShape(Circle())
+                        }
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, 12)
@@ -148,6 +161,9 @@ public struct GamePlayView: View {
                 if timerActive && !showingVictory {
                     elapsedTime += 1
                 }
+            }
+            .sheet(isPresented: $showingSettings) {
+                SettingsView()
             }
         }
     }
