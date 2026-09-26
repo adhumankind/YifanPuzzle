@@ -260,6 +260,15 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         onProgressUpdate?(placedCount, pieceDatas.count)
     }
 
+    public func applyRotationSettingChanged(allowFree: Bool) {
+        if !allowFree {
+            // 关闭自由旋转时，将所有未拼好的碎片以平滑动画恢复正向角度 0
+            for piece in pieceNodes.values where !piece.isPlaced {
+                piece.run(SKAction.rotate(toAngle: 0, duration: 0.25, shortestUnitArc: true))
+            }
+        }
+    }
+
     // MARK: - 触摸手势交互
 
     private func setupGestureRecognizers(on view: SKView) {

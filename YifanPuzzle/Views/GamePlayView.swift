@@ -165,6 +165,9 @@ public struct GamePlayView: View {
             .sheet(isPresented: $showingSettings) {
                 SettingsView()
             }
+            .onChange(of: GameSettings.shared.allowFreeRotation) { allow in
+                scene?.applyRotationSettingChanged(allowFree: allow)
+            }
         }
     }
 
