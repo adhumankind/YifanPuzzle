@@ -127,6 +127,15 @@ private struct LevelImageCard: View {
     let level: PuzzleLevel
     let onPlay: () -> Void
 
+    private func formatDisplayTime(_ seconds: Double) -> String {
+        let sec = Int(seconds)
+        if sec < 60 {
+            return "\(sec)秒"
+        } else {
+            return "\(sec / 60)分\(sec % 60)秒"
+        }
+    }
+
     var body: some View {
         let record = ProgressManager.shared.getRecord(imageId: item.id, levelId: level.id)
         let isDone = record?.isCompleted ?? false
@@ -194,7 +203,7 @@ private struct LevelImageCard: View {
 
                 HStack {
                     if let best = record?.bestTimeInSeconds, best > 0 {
-                        Text("最佳: \(Int(best))秒")
+                        Text("最佳: \(formatDisplayTime(best))")
                             .font(.caption2.bold())
                             .foregroundColor(.yellow)
                     }
