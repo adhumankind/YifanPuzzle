@@ -34,7 +34,17 @@ public struct SettingsView: View {
 
                     Section {
                         Toggle("拼图咔哒吸附与拾取音效", isOn: $settings.soundEnabled)
+                            .onChange(of: settings.soundEnabled) { enabled in
+                                if enabled {
+                                    GameFeedbackEngine.shared.triggerSnap()
+                                }
+                            }
                         Toggle("清脆触感震动反馈", isOn: $settings.hapticsEnabled)
+                            .onChange(of: settings.hapticsEnabled) { enabled in
+                                if enabled {
+                                    GameFeedbackEngine.shared.triggerSnap()
+                                }
+                            }
                         Toggle("原图半透明虚影辅助参考", isOn: $settings.showGhostOutline)
                         Toggle("陀螺仪 3D 景深视差效果", isOn: $settings.parallax3DEnabled)
                     } header: {
