@@ -205,6 +205,11 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         let allowRotation = GameSettings.shared.allowFreeRotation
         var rng = SeededRandom(seed: 1234567)
 
+        // 尝试加载中断续玩快照
+        let savedSnapshot = SessionSaveManager.shared.load()
+        let isResuming = (savedSnapshot != nil && savedSnapshot?.imageId == imageItem.id && savedSnapshot?.levelId == level.id)
+        let savedDict = isResuming ? Dictionary(uniqueKeysWithValues: (savedSnapshot!.pieces.map { ($0.id, $0) })) : [:]
+
         for pieceData in pieceDatas {
             guard let tex = renderedDict[pieceData.id] else { continue }
             let node = PuzzlePieceNode(pieceData: pieceData, textures: tex)
@@ -214,25 +219,45 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
             let correctY = boardRect.origin.y + (1.0 - pieceData.targetGridNormalized.y) * boardRect.height
             node.correctBoardPosition = CGPoint(x: correctX, y: correctY)
 
-            // 初始随机散落在右侧堆放区
-            let randomX = pileRect.origin.x + CGFloat(rng.next() % 1000) / 1000.0 * pileRect.width
-            let randomY = pileRect.origin.y + CGFloat(rng.next() % 1000) / 1000.0 * pileRect.height
-            node.position = CGPoint(x: randomX, y: randomY)
-
-            // 自由旋转开关逻辑
-            if allowRotation {
-                let randomAngle = (CGFloat(rng.next() % 360) - 180.0) * (.pi / 180.0)
-                node.zRotation = randomAngle
+            if let saved = savedDict[pieceData.id] {
+                // 恢复先前保存的位置与状态
+                node.isPlaced = saved.isPlaced
+                node.groupId = saved.groupId
+                node.zRotation = saved.rotation
+                if saved.isPlaced {
+                    node.position = node.correctBoardPosition
+                    node.zPosition = 10
+                    node.shadowSprite.alpha = 0
+                } else if let slotIdx = saved.traySlotIndex {
+                    node.position = CGPoint(x: saved.currentX, y: saved.currentY)
+                    node.zPosition = 20
+                    trayNode.placePiece(node, intoSlot: slotIdx)
+                } else {
+                    node.position = CGPoint(x: saved.currentX, y: saved.currentY)
+                    node.zPosition = 20
+                }
             } else {
-                node.zRotation = 0
+                // 初始随机散落在右侧堆放区
+                let randomX = pileRect.origin.x + CGFloat(rng.next() % 1000) / 1000.0 * pileRect.width
+                let randomY = pileRect.origin.y + CGFloat(rng.next() % 1000) / 1000.0 * pileRect.height
+                node.position = CGPoint(x: randomX, y: randomY)
+
+                // 自由旋转开关逻辑
+                if allowRotation {
+                    let randomAngle = (CGFloat(rng.next() % 360) - 180.0) * (.pi / 180.0)
+                    node.zRotation = randomAngle
+                } else {
+                    node.zRotation = 0
+                }
+                node.zPosition = 20
             }
 
-            node.zPosition = 20
             addChild(node)
             pieceNodes[pieceData.id] = node
         }
 
-        onProgressUpdate?(0, pieceDatas.count)
+        let placedCount = pieceNodes.values.filter { $0.isPlaced }.count
+        onProgressUpdate?(placedCount, pieceDatas.count)
     }
 
     // MARK: - 触摸手势交互
@@ -439,15 +464,43 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
 
         if placedCount == pieceDatas.count && !isCompleted {
             isCompleted = true
+            SessionSaveManager.shared.clear()
             let elapsed = Date().timeIntervalSince(startTime)
             ProgressManager.shared.markCompleted(imageId: imageItem.id, levelId: level.id, elapsedSeconds: elapsed)
             GameFeedbackEngine.shared.triggerVictory()
             onGameCompleted?(elapsed)
+        } else {
+            saveCurrentSession()
         }
+    }
+
+    public func saveCurrentSession() {
+        guard !isCompleted else { return }
+        let savedPieces: [SavedPieceState] = pieceNodes.values.map { node in
+            SavedPieceState(
+                id: node.pieceData.id,
+                currentX: node.position.x,
+                currentY: node.position.y,
+                rotation: node.zRotation,
+                isPlaced: node.isPlaced,
+                traySlotIndex: node.traySlotIndex,
+                groupId: node.groupId
+            )
+        }
+        let snapshot = GameSessionSnapshot(
+            imageId: imageItem.id,
+            levelId: level.id,
+            elapsedTime: Date().timeIntervalSince(startTime),
+            pieces: savedPieces,
+            splitRatio: Double(currentSplitRatio),
+            timestamp: Date()
+        )
+        SessionSaveManager.shared.save(snapshot: snapshot)
     }
 
     public override func willMove(from view: SKView) {
         super.willMove(from: view)
+        saveCurrentSession()
         ParallaxMotionManager.shared.stop()
         if let gesture = rotationGestureRecognizer {
             view.removeGestureRecognizer(gesture)

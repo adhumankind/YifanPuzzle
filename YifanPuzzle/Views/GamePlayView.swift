@@ -156,9 +156,14 @@ public struct GamePlayView: View {
         guard size.width > 0 && size.height > 0 else { return }
         let img = PuzzleImageRepository.shared.loadImage(for: imageItem) ?? PuzzleImageRepository.generateFallbackImage(title: imageItem.title)
         let s = PuzzleGameScene(size: size, imageItem: imageItem, level: level, sourceImage: img)
-        self.placedCount = 0
         self.totalCount = level.pieceCount
-        self.elapsedTime = 0
+
+        // 尝试恢复已保存的计时进度
+        if let snapshot = SessionSaveManager.shared.load(), snapshot.imageId == imageItem.id && snapshot.levelId == level.id {
+            self.elapsedTime = snapshot.elapsedTime
+        } else {
+            self.elapsedTime = 0
+        }
         self.timerActive = true
 
         s.onProgressUpdate = { [weak s] placed, total in
