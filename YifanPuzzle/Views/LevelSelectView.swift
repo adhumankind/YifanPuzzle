@@ -130,6 +130,7 @@ private struct LevelImageCard: View {
     var body: some View {
         let record = ProgressManager.shared.getRecord(imageId: item.id, levelId: level.id)
         let isDone = record?.isCompleted ?? false
+        let hasResume = SessionSaveManager.shared.load().map { $0.imageId == item.id && $0.levelId == level.id } ?? false
 
         VStack(alignment: .leading, spacing: 10) {
             ZStack(alignment: .topTrailing) {
@@ -160,6 +161,18 @@ private struct LevelImageCard: View {
                     .foregroundColor(.white)
                     .cornerRadius(8)
                     .padding(8)
+                } else if hasResume {
+                    HStack(spacing: 4) {
+                        Image(systemName: "play.circle.fill")
+                        Text("有存档")
+                    }
+                    .font(.caption.bold())
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Color.orange.opacity(0.9))
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+                    .padding(8)
                 }
             }
 
@@ -186,11 +199,11 @@ private struct LevelImageCard: View {
                             .foregroundColor(.yellow)
                     }
                     Spacer()
-                    Button("立即拼图", action: onPlay)
+                    Button(hasResume ? "继续拼图" : "立即拼图", action: onPlay)
                         .font(.system(size: 13, weight: .bold))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
-                        .background(Color.blue)
+                        .background(hasResume ? Color.orange : Color.blue)
                         .foregroundColor(.white)
                         .cornerRadius(8)
                 }
