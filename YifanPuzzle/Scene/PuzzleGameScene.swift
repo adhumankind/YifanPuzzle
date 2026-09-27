@@ -788,9 +788,14 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         GameFeedbackEngine.shared.triggerMagic()
 
         let trayCenter = trayNode.position
-        let sorted = candidates.sorted {
-            abs($0.position.x - trayCenter.x) + abs($0.position.y - trayCenter.y)
-                < abs($1.position.x - trayCenter.x) + abs($1.position.y - trayCenter.y)
+        // 排序策略：优先收"未咬合成组"的散落单块（成组块保持完整队列），同级再按离托盘就近
+        let sorted = candidates.sorted { a, b in
+            let aSingle = a.groupId == a.pieceData.id
+            let bSingle = b.groupId == b.pieceData.id
+            if aSingle != bSingle { return aSingle }
+            let da = abs(a.position.x - trayCenter.x) + abs(a.position.y - trayCenter.y)
+            let db = abs(b.position.x - trayCenter.x) + abs(b.position.y - trayCenter.y)
+            return da < db
         }
 
         for (slotIndex, piece) in zip(emptySlots, sorted.prefix(emptySlots.count)) {

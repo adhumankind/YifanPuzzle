@@ -233,8 +233,28 @@ public struct GamePlayView: View {
             .padding(.trailing, max(24, proxy.safeAreaInsets.trailing + 12))
             .padding(.top, max(12, proxy.safeAreaInsets.top + 6))
 
-            Spacer()
-        }
+                    // 拼图进度细条
+                    GeometryReader { barProxy in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(MaillardTheme.warmGlass)
+                            Capsule()
+                                .fill(MaillardTheme.goldGradient)
+                                .frame(width: barProxy.size.width * progressRatio)
+                                .animation(.easeInOut(duration: 0.3), value: progressRatio)
+                        }
+                    }
+                    .frame(height: 4)
+                    .padding(.top, 6)
+
+                    Spacer()
+                }
+    }
+
+    /// 拼图完成进度比例（0~1）
+    private var progressRatio: Double {
+        let total = totalCount > 0 ? totalCount : currentLevel.pieceCount
+        guard total > 0 else { return 0 }
+        return min(1.0, Double(placedCount) / Double(total))
     }
 
     // MARK: - 底部左侧无限辅助道具
