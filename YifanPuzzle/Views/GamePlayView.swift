@@ -144,7 +144,7 @@ public struct GamePlayView: View {
                     Text(currentImageItem.title)
                         .font(.system(size: 15, weight: .bold, design: .serif))
                         .foregroundColor(MaillardTheme.cream)
-                    Text("第\(currentLevel.id)级 · 进度: \(placedCount)/\(totalCount > 0 ? totalCount : currentLevel.pieceCount)")
+                    Text("第\(currentLevel.id)级 · 进度: \(placedCount)/\(totalCount > 0 ? totalCount : currentLevel.pieceCount)" + bestSuffix)
                         .font(.system(size: 11))
                         .foregroundColor(MaillardTheme.muted)
                 }
@@ -493,6 +493,14 @@ public struct GamePlayView: View {
         self.placedCount = 0
         self.totalCount = level.pieceCount
         setupScene(size: size)
+    }
+
+    /// 本关最佳用时的 HUD 展示后缀（该图案尚无纪录时为空）
+    private var bestSuffix: String {
+        if let best = ProgressManager.shared.getRecord(imageId: currentImageItem.id, levelId: currentLevel.id)?.bestTimeInSeconds, best > 0 {
+            return " · 最佳 \(formatTime(best))"
+        }
+        return ""
     }
 
     private func formatTime(_ sec: TimeInterval) -> String {

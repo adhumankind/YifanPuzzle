@@ -34,7 +34,7 @@ public struct VictoryCelebrationView: View {
     public var body: some View {
         GeometryReader { geo in
             // 小屏（如 SE 横屏 375pt 高）下整体等比缩小，保证按钮永远完整可见
-            let fitScale = min(1.0, geo.size.height / 440.0)
+            let fitScale = min(1.0, geo.size.height / 500.0)
             ZStack {
                 Color.black.opacity(0.72).ignoresSafeArea()
 
@@ -90,9 +90,11 @@ public struct VictoryCelebrationView: View {
                     ForEach(achievementEntries, id: \.achievement.rawValue) { entry in
                         let isNew = newAchievements.contains(entry.achievement)
                         HStack(spacing: 6) {
-                            Image(systemName: entry.isUnlocked ? "seal.fill" : "seal")
-                                .font(.system(size: 12))
-                                .foregroundColor(entry.isUnlocked ? MaillardTheme.gold : MaillardTheme.muted.opacity(0.45))
+                            Image(entry.achievement.spriteName)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 24)
+                                .opacity(entry.isUnlocked ? 1 : 0.28)
                             Text(entry.achievement.title)
                                 .font(.system(size: 12, weight: entry.isUnlocked ? .bold : .regular))
                                 .foregroundColor(entry.isUnlocked ? MaillardTheme.cream : MaillardTheme.muted.opacity(0.55))

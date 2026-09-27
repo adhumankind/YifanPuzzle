@@ -36,6 +36,15 @@ public final class ProgressManager {
             case .allImagesDone: return "收藏大家"
             }
         }
+
+        public var spriteName: String {
+            switch self {
+            case .firstWin: return "sprite_ach_first"
+            case .noAssistWin: return "sprite_ach_solo"
+            case .level5Win: return "sprite_ach_peak"
+            case .allImagesDone: return "sprite_ach_all"
+            }
+        }
     }
 
     private let userDefaultsKey = "com.yifan.puzzle.records"

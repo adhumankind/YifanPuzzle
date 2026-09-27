@@ -55,16 +55,11 @@ public struct SettingsView: View {
                     Section {
                         ForEach(ProgressManager.shared.allAchievements(), id: \.achievement.rawValue) { entry in
                             HStack(spacing: 10) {
-                                if entry.achievement == .level5Win {
-                                    Image("sprite_crown")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(height: 18)
-                                        .opacity(entry.isUnlocked ? 1 : 0.35)
-                                } else {
-                                    Image(systemName: entry.isUnlocked ? "seal.fill" : "seal")
-                                        .foregroundColor(entry.isUnlocked ? MaillardTheme.gold : MaillardTheme.muted.opacity(0.45))
-                                }
+                                Image(entry.achievement.spriteName)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(height: 26)
+                                    .opacity(entry.isUnlocked ? 1 : 0.35)
                                 Text(entry.achievement.title)
                                     .font(.system(size: 15, weight: entry.isUnlocked ? .semibold : .regular))
                                     .foregroundColor(entry.isUnlocked ? MaillardTheme.cream : MaillardTheme.muted.opacity(0.6))
