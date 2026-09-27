@@ -6,6 +6,7 @@ public struct VictoryCelebrationView: View {
     public let level: PuzzleLevel
     public let elapsedTime: TimeInterval
     public let newAchievements: [ProgressManager.Achievement]
+    public let usedAssistProps: Bool
     public let onNext: (() -> Void)?
     public let onReplay: () -> Void
     public let onBack: () -> Void
@@ -18,6 +19,7 @@ public struct VictoryCelebrationView: View {
         level: PuzzleLevel,
         elapsedTime: TimeInterval,
         newAchievements: [ProgressManager.Achievement] = [],
+        usedAssistProps: Bool = false,
         onNext: (() -> Void)? = nil,
         onReplay: @escaping () -> Void,
         onBack: @escaping () -> Void
@@ -26,6 +28,7 @@ public struct VictoryCelebrationView: View {
         self.level = level
         self.elapsedTime = elapsedTime
         self.newAchievements = newAchievements
+        self.usedAssistProps = usedAssistProps
         self.onNext = onNext
         self.onReplay = onReplay
         self.onBack = onBack
@@ -116,6 +119,15 @@ public struct VictoryCelebrationView: View {
                     }
                 }
                 .padding(.horizontal, 2)
+
+                // 道具使用回顾（中心思想：不设阻碍，顺便引导冲击"独立完成"徽章）
+                HStack(spacing: 6) {
+                    Image(systemName: usedAssistProps ? "wand.and.stars" : "checkmark.seal.fill")
+                        .font(.system(size: 12))
+                    Text(usedAssistProps ? "本局使用了道具 · 全程不用可赢取「独立完成」徽章" : "全程未用道具 · 干净利落！")
+                        .font(.system(size: 11, weight: usedAssistProps ? .regular : .bold))
+                }
+                .foregroundColor(usedAssistProps ? MaillardTheme.muted : MaillardTheme.gold)
 
                 HStack(spacing: 16) {
                     Button {

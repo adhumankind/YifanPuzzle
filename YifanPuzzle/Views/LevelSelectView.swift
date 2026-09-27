@@ -11,9 +11,14 @@ final class PreviewTiltObserver: ObservableObject {
         guard manager.isDeviceMotionAvailable, !manager.isDeviceMotionActive else { return }
         manager.deviceMotionUpdateInterval = 1.0 / 20.0
         manager.startDeviceMotionUpdates(to: .main) { [weak self] motion, _ in
-            guard let motion = motion else { return }
-            self?.roll = CGFloat(motion.attitude.roll)
-            self?.pitch = CGFloat(motion.attitude.pitch)
+            guard let motion = motion, let self = self else { return }
+            let newRoll = CGFloat(motion.attitude.roll)
+            let newPitch = CGFloat(motion.attitude.pitch)
+            // 阈值门控：设备静止时不再以 20Hz 触发界面重渲染
+            if abs(newRoll - self.roll) > 0.004 || abs(newPitch - self.pitch) > 0.004 {
+                self.roll = newRoll
+                self.pitch = newPitch
+            }
         }
     }
 
@@ -30,6 +35,8 @@ public struct LevelSelectView: View {
     @State private var selectedImageForPlay: (PuzzleImageItem, PuzzleLevel)? = nil
     @State private var refreshTrigger = false
     @State private var isPreviewGlowing = false
+    @State private var showingFullPreview = false
+    @State private var resumeImageId: String? = nil // 当前有对局存档的图案 id（单存档槽）
     @StateObject private var tiltObserver = PreviewTiltObserver()
 
     private let config = PuzzleConfig.default
@@ -61,9 +68,13 @@ public struct LevelSelectView: View {
         .navigationBarBackButtonHidden(true)
         .onAppear {
             refreshTrigger.toggle()
+            refreshResumeState()
             if GameSettings.shared.parallax3DEnabled {
                 tiltObserver.start()
             }
+        }
+        .onChange(of: refreshTrigger) { _ in
+            refreshResumeState()
         }
         .onDisappear {
             tiltObserver.stop()
@@ -83,6 +94,31 @@ public struct LevelSelectView: View {
             }
         )) { params in
             GamePlayView(imageItem: params.item, level: params.level)
+        }
+        .fullScreenCover(isPresented: $showingFullPreview) {
+            // 大图全屏查看（轻点任意处返回）
+            ZStack {
+                Color.black.opacity(0.93).ignoresSafeArea()
+                    .onTapGesture {
+                        showingFullPreview = false
+                    }
+                VStack(spacing: 14) {
+                    if let item = selectedDisplayItem, let uiImg = PuzzleImageRepository.shared.loadImage(for: item) {
+                        Image(uiImage: uiImg)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: 1100, maxHeight: 560)
+                            .cornerRadius(14)
+                            .shadow(radius: 24)
+                        Text(item.title)
+                            .font(.system(size: 18, weight: .bold, design: .serif))
+                            .foregroundColor(MaillardTheme.cream)
+                    }
+                    Text("轻点任意处返回")
+                        .font(.system(size: 12))
+                        .foregroundColor(MaillardTheme.muted)
+                }
+            }
         }
         .onAppear { refreshTrigger.toggle() }
     }
@@ -233,7 +269,8 @@ public struct LevelSelectView: View {
         let item = displayItems[safeIndex]
         let record = ProgressManager.shared.getRecord(imageId: item.id, levelId: currentLevel.id)
         let isDone = record?.isCompleted ?? false
-        let hasResume = SessionSaveManager.shared.load().map { $0.imageId == item.id && $0.levelId == currentLevel.id } ?? false
+        // 有存档判定走缓存的"图_级"复合键，避免随姿态视差的高频重渲染反复解码快照
+        let hasResume = resumeImageId == "\(item.id)_\(currentLevel.id)"
         let previewH = min(max(proxy.size.height - 202, 130), 240)
         // 小横屏（高度 < 390pt，如 SE）自动切换紧凑排版，防止内容溢出裁切
         let compact = proxy.size.height < 390
@@ -241,7 +278,7 @@ public struct LevelSelectView: View {
         return HStack(spacing: compact ? 18 : 30) {
             Spacer(minLength: 0)
 
-            // 左：高清大图预览
+            // 左：高清大图预览（点击可全屏查看）
             ZStack {
                 if let uiImg = PuzzleImageRepository.shared.loadImage(for: item) {
                     Image(uiImage: uiImg)
@@ -250,6 +287,10 @@ public struct LevelSelectView: View {
                 } else {
                     Rectangle().fill(MaillardTheme.surface)
                 }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                showingFullPreview = true
             }
             .frame(width: previewH * 16 / 9, height: previewH)
             .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -421,6 +462,21 @@ public struct LevelSelectView: View {
         }
         .padding(.vertical, 4)
         .frame(maxWidth: .infinity)
+    }
+
+    /// 当前选中的图案（供全屏预览使用）
+    private var selectedDisplayItem: PuzzleImageItem? {
+        let currentLevel = config.levels[selectedLevelIndex]
+        let allItems = PuzzleImageRepository.shared.allItems()
+        let levelItems = allItems.filter { currentLevel.imageIds.contains($0.id) }
+        let displayItems = levelItems.isEmpty ? Array(allItems.prefix(2)) : levelItems
+        let safeIndex = min(selectedImageIndex, max(0, displayItems.count - 1))
+        return displayItems[safeIndex]
+    }
+
+    /// 刷新"有对局存档"的复合键缓存
+    private func refreshResumeState() {
+        resumeImageId = SessionSaveManager.shared.load().map { "\($0.imageId)_\($0.levelId)" }
     }
 
     /// 判断某等级下的全部图案是否均已通关（用于小金冠标识）
