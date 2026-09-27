@@ -103,7 +103,20 @@ public final class StorageTrayNode: SKNode {
         let move = SKAction.move(to: targetPos, duration: 0.18)
         move.timingMode = .easeOut
         let scale = SKAction.scale(to: fitScale, duration: 0.18)
+        scale.timingMode = .easeOut
         let rotate = SKAction.rotate(toAngle: 0, duration: 0.18, shortestUnitArc: true)
+        rotate.timingMode = .easeOut
+
+        // 格子高亮轻微脉冲反馈
+        if slotIndex < slotNodes.count {
+            let slot = slotNodes[slotIndex]
+            let highlight = SKAction.sequence([
+                SKAction.run { slot.fillColor = UIColor(red: 0.0, green: 0.8, blue: 1.0, alpha: 0.35) },
+                SKAction.wait(forDuration: 0.15),
+                SKAction.run { slot.fillColor = UIColor(white: 0.05, alpha: 0.6) }
+            ])
+            slot.run(highlight)
+        }
 
         piece.run(SKAction.group([move, scale, rotate]))
     }

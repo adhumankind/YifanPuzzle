@@ -334,7 +334,10 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         for piece in pieceNodes.values where piece.traySlotIndex != nil {
             if piece.contains(touchLocation) {
                 trayNode.removePiece(fromSlot: piece.traySlotIndex!)
+                highestZIndex += 10
+                piece.zPosition = highestZIndex
                 piece.animatePickup()
+                GameFeedbackEngine.shared.triggerPickup()
                 beginDragging(pieces: [piece], at: touchLocation)
                 return
             }
