@@ -437,13 +437,14 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         }
 
         if anySnapped {
-            // 整组一同吸附锁定到正确位置
+            // 整组一同吸附锁定到正确位置并立即持久化存档
             for piece in dragged {
                 piece.animateSnap(to: piece.correctBoardPosition) { [weak self] in
                     self?.checkGameCompletion()
                 }
             }
             GameFeedbackEngine.shared.triggerSnap()
+            saveCurrentSession()
         } else {
             // C. 检查未归位碎片之间是否有相邻咬合成组
             checkPieceToPieceMerge(draggedPieces: dragged)
