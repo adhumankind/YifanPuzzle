@@ -34,10 +34,11 @@ public struct VictoryCelebrationView: View {
 
             VStack(spacing: 16) {
                 // 奖杯与成就勋章
-                Image(systemName: "trophy.fill")
-                    .font(.system(size: 54))
-                    .foregroundColor(MaillardTheme.gold)
-                    .shadow(color: MaillardTheme.gold.opacity(0.65), radius: 14)
+                Image("sprite_trophy")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 88)
+                    .shadow(color: MaillardTheme.gold.opacity(0.45), radius: 16)
 
                 Text("挑战成功！完美拼合")
                     .font(.system(size: 26, weight: .heavy, design: .serif))
@@ -85,15 +86,13 @@ public struct VictoryCelebrationView: View {
                             Image(systemName: "arrow.counterclockwise")
                             Text("再拼一次")
                         }
-                        .font(.system(size: 14, weight: .bold, design: .serif))
+                        .font(.system(size: 13, weight: .bold, design: .serif))
                         .foregroundColor(MaillardTheme.cream)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(MaillardTheme.warmGlass)
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(MaillardTheme.warmStroke, lineWidth: 0.8)
+                        .frame(width: 150, height: 53)
+                        .background(
+                            Image("sprite_btn_brown")
+                                .resizable()
+                                .scaledToFit()
                         )
                     }
 
@@ -105,13 +104,15 @@ public struct VictoryCelebrationView: View {
                                 Image(systemName: "forward.fill")
                                 Text("下一幅图")
                             }
-                            .font(.system(size: 14, weight: .bold, design: .serif))
+                            .font(.system(size: 13, weight: .bold, design: .serif))
                             .foregroundColor(MaillardTheme.deep)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 10)
-                            .background(MaillardTheme.goldGradient)
-                            .cornerRadius(12)
-                            .shadow(color: MaillardTheme.gold.opacity(0.35), radius: 8, y: 3)
+                            .frame(width: 160, height: 56)
+                            .background(
+                                Image("sprite_btn_gold")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .shadow(color: Color.black.opacity(0.35), radius: 8, y: 4)
+                            )
                         }
                     }
 
@@ -122,12 +123,14 @@ public struct VictoryCelebrationView: View {
                             Image(systemName: "square.grid.2x2")
                             Text("返回关卡")
                         }
-                        .font(.system(size: 14, weight: .bold, design: .serif))
+                        .font(.system(size: 13, weight: .bold, design: .serif))
                         .foregroundColor(onNext == nil ? MaillardTheme.deep : MaillardTheme.cream)
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 10)
-                        .background(onNext == nil ? AnyShapeStyle(MaillardTheme.goldGradient) : AnyShapeStyle(MaillardTheme.warmGlass))
-                        .cornerRadius(12)
+                        .frame(width: 150, height: 53)
+                        .background(
+                            Image(onNext == nil ? "sprite_btn_gold" : "sprite_btn_brown")
+                                .resizable()
+                                .scaledToFit()
+                        )
                     }
                 }
                 .padding(.top, 10)

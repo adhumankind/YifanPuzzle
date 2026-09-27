@@ -31,10 +31,11 @@ public struct MainMenuView: View {
                         // 左侧：品牌 Logo 与艺术标识
                         VStack(alignment: .leading, spacing: 14) {
                             HStack(spacing: 14) {
-                                Image(systemName: "puzzlepiece.extension.fill")
-                                    .font(.system(size: 42, weight: .bold))
-                                    .foregroundColor(MaillardTheme.gold)
-                                    .shadow(color: MaillardTheme.gold.opacity(0.55), radius: 10)
+                                Image("sprite_puzzle_logo")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(height: 52)
+                                    .shadow(color: Color.black.opacity(0.45), radius: 8, y: 4)
 
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text("一凡拼图")
@@ -81,14 +82,13 @@ public struct MainMenuView: View {
                                         .font(.system(size: 20, weight: .bold, design: .serif))
                                 }
                                 .foregroundColor(MaillardTheme.deep)
-                                .frame(width: 240, height: 60)
-                                .background(MaillardTheme.goldGradient)
-                                .cornerRadius(18)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 18)
-                                        .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                                .frame(width: 236, height: 83)
+                                .background(
+                                    Image("sprite_btn_gold")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .shadow(color: Color.black.opacity(0.40), radius: 10, y: 5)
                                 )
-                                .shadow(color: MaillardTheme.gold.opacity(0.40), radius: 14, y: 5)
                             }
 
                             Button {
@@ -101,12 +101,12 @@ public struct MainMenuView: View {
                                         .font(.system(size: 17, weight: .semibold, design: .serif))
                                 }
                                 .foregroundColor(MaillardTheme.cream)
-                                .frame(width: 240, height: 50)
-                                .background(MaillardTheme.warmGlass)
-                                .cornerRadius(16)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(MaillardTheme.warmStroke, lineWidth: 1)
+                                .frame(width: 236, height: 83)
+                                .background(
+                                    Image("sprite_btn_brown")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .shadow(color: Color.black.opacity(0.35), radius: 8, y: 4)
                                 )
                             }
                         }

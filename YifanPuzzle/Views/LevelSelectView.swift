@@ -53,7 +53,11 @@ public struct LevelSelectView: View {
 
                         // 当前解锁总星数
                         HStack(spacing: 5) {
-                            Image(systemName: "star.fill").foregroundColor(MaillardTheme.gold)
+                            Image("sprite_star")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 18)
+                                .shadow(color: Color.black.opacity(0.40), radius: 3, y: 1)
                             Text("\(ProgressManager.shared.completedCount())")
                                 .foregroundColor(MaillardTheme.cream)
                                 .font(.system(size: 15, weight: .bold, design: .serif))
@@ -88,11 +92,21 @@ public struct LevelSelectView: View {
                                     } label: {
                                     HStack(spacing: 6) {
                                         if !unlocked {
-                                            Image(systemName: "lock.fill").font(.caption)
-                                                .foregroundColor(MaillardTheme.muted.opacity(0.7))
+                                            Image("sprite_lock")
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(height: 15)
+                                                .opacity(0.85)
+                                        } else if lvl.id == config.levels.last?.id {
+                                            Image("sprite_crown")
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(height: 16)
                                         } else {
-                                            Image(systemName: "sparkles").font(.caption)
-                                                .foregroundColor(selectedLevelIndex == idx ? MaillardTheme.deep : MaillardTheme.gold)
+                                            Image("sprite_star")
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(height: 15)
                                         }
                                         Text("第\(lvl.id)级: \(lvl.pieceCount)块")
                                             .font(.system(size: 14, weight: .bold, design: .serif))
@@ -287,20 +301,14 @@ private struct LevelImageCard: View {
                     }
                     Spacer()
                     Button(hasResume ? "继续拼图" : "立即拼图", action: onPlay)
-                        .font(.system(size: 13, weight: .bold, design: .serif))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 6)
+                        .font(.system(size: 12, weight: .bold, design: .serif))
+                        .foregroundColor(hasResume ? MaillardTheme.cream : MaillardTheme.deep)
+                        .frame(width: 106, height: 37)
                         .background(
-                            Group {
-                                if hasResume {
-                                    RoundedRectangle(cornerRadius: 8).fill(MaillardTheme.caramelGradient)
-                                } else {
-                                    RoundedRectangle(cornerRadius: 8).fill(MaillardTheme.goldGradient)
-                                }
-                            }
+                            Image(hasResume ? "sprite_btn_brown" : "sprite_btn_gold")
+                                .resizable()
+                                .scaledToFit()
                         )
-                        .foregroundColor(MaillardTheme.deep)
-                        .cornerRadius(8)
                 }
                 .padding(.top, 4)
             }

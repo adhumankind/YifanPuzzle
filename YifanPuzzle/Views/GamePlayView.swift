@@ -93,13 +93,15 @@ public struct GamePlayView: View {
                                 Image(systemName: "eye.fill")
                                 Text("看原图")
                             }
-                            .font(.system(size: 13, weight: .bold, design: .serif))
+                            .font(.system(size: 12, weight: .bold, design: .serif))
                             .foregroundColor(MaillardTheme.deep)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(MaillardTheme.goldGradient)
-                            .cornerRadius(12)
-                            .shadow(color: MaillardTheme.gold.opacity(0.30), radius: 6, y: 2)
+                            .frame(width: 94, height: 34)
+                            .background(
+                                Image("sprite_btn_gold")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .shadow(color: Color.black.opacity(0.30), radius: 5, y: 2)
+                            )
                         }
 
                         // 局中快速设置按钮（随时切换自由角度/音效）
