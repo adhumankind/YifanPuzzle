@@ -75,6 +75,8 @@ public struct LevelSelectView: View {
                                     HStack(spacing: 6) {
                                         if !unlocked {
                                             Image(systemName: "lock.fill").font(.caption)
+                                        } else {
+                                            Image(systemName: "sparkles").font(.caption).foregroundColor(selectedLevelIndex == idx ? .black : .yellow)
                                         }
                                         Text("第\(lvl.id)级: \(lvl.pieceCount)块")
                                             .font(.system(size: 14, weight: .bold))
@@ -84,6 +86,8 @@ public struct LevelSelectView: View {
                                     .foregroundColor(selectedLevelIndex == idx ? .black : (unlocked ? .white : .white.opacity(0.35)))
                                     .background(selectedLevelIndex == idx ? Color.cyan : Color.white.opacity(0.12))
                                     .cornerRadius(12)
+                                    .scaleEffect(selectedLevelIndex == idx ? 1.04 : 1.0)
+                                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedLevelIndex)
                                 }
                                 .disabled(!unlocked)
                             }
