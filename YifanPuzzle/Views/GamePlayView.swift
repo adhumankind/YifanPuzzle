@@ -175,7 +175,7 @@ public struct GamePlayView: View {
                     }
                             .font(.system(size: 12, weight: .bold, design: .serif))
                             .foregroundColor(MaillardTheme.deep)
-                            .frame(width: 94, height: 34)
+                            .frame(width: 92, height: 32)
                             .background(
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 12).fill(MaillardTheme.goldGradient)
@@ -254,6 +254,26 @@ public struct GamePlayView: View {
                 propIcon("sprite_wand")
             }
             .buttonStyle(MaillardTheme.pressStyle)
+
+            Button {
+                scene?.collectScatteredPieces()
+            } label: {
+                Image(systemName: "tray.full")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundColor(MaillardTheme.cream)
+                    .frame(width: 40, height: 40)
+                    .background(MaillardTheme.warmGlass)
+                    .overlay(Circle().stroke(MaillardTheme.warmStroke, lineWidth: 0.8))
+                    .overlay(alignment: .topTrailing) {
+                        Text("∞")
+                            .font(.system(size: 11, weight: .black, design: .rounded))
+                            .foregroundColor(MaillardTheme.cream)
+                            .padding(3)
+                            .background(Circle().fill(MaillardTheme.caramel))
+                            .offset(x: 9, y: -7)
+                    }
+            }
+            .buttonStyle(MaillardTheme.pressStyle)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
         .padding(.leading, max(18, proxy.safeAreaInsets.leading + 10))
@@ -282,7 +302,7 @@ public struct GamePlayView: View {
                     .font(.system(size: 22, weight: .heavy, design: .serif))
                     .foregroundColor(MaillardTheme.cream)
 
-                Text("拖动碎片到左侧拼图板，位置正确会自动咔哒吸附；\n左下角道具无限帮你找位置、自动拼块，长按托盘可一键收拢碎片。")
+                Text("拖动碎片到左侧拼图板，位置正确会自动咔哒吸附；\n左下角道具无限帮你找位置、自动拼块、一键收拢碎片。")
                     .font(.system(size: 13))
                     .foregroundColor(MaillardTheme.cream.opacity(0.85))
                     .multilineTextAlignment(.center)

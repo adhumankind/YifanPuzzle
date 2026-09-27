@@ -338,7 +338,7 @@ public struct LevelSelectView: View {
                             .font(.system(size: compact ? 18 : 21, weight: .bold, design: .serif))
                     }
                     .foregroundColor(hasResume ? MaillardTheme.cream : MaillardTheme.deep)
-                    .frame(width: compact ? 224 : 250, height: compact ? 74 : 84)
+                    .frame(width: compact ? 210 : 240, height: compact ? 74 : 84)
                     .background(
                         ZStack {
                             RoundedRectangle(cornerRadius: 20)
