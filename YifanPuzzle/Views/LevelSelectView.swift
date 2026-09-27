@@ -1,31 +1,4 @@
 import SwiftUI
-import CoreMotion
-
-/// 轻量姿态观察器（独立 CMMotionManager 实例，不与对局场景视差管理器抢占回调；选关页与看原图浮层共用）
-final class PreviewTiltObserver: ObservableObject {
-    @Published var roll: CGFloat = 0
-    @Published var pitch: CGFloat = 0
-    private let manager = CMMotionManager()
-
-    func start() {
-        guard manager.isDeviceMotionAvailable, !manager.isDeviceMotionActive else { return }
-        manager.deviceMotionUpdateInterval = 1.0 / 20.0
-        manager.startDeviceMotionUpdates(to: .main) { [weak self] motion, _ in
-            guard let motion = motion, let self = self else { return }
-            let newRoll = CGFloat(motion.attitude.roll)
-            let newPitch = CGFloat(motion.attitude.pitch)
-            // 阈值门控：设备静止时不再以 20Hz 触发界面重渲染
-            if abs(newRoll - self.roll) > 0.004 || abs(newPitch - self.pitch) > 0.004 {
-                self.roll = newRoll
-                self.pitch = newPitch
-            }
-        }
-    }
-
-    func stop() {
-        manager.stopDeviceMotionUpdates()
-    }
-}
 
 /// 关卡选择视图（参考知名拼图游戏横屏布局：左大图预览 + 右信息与大按钮 + 底部缩略图切换）
 public struct LevelSelectView: View {
@@ -34,10 +7,8 @@ public struct LevelSelectView: View {
     @State private var selectedImageIndex: Int = 0
     @State private var selectedImageForPlay: (PuzzleImageItem, PuzzleLevel)? = nil
     @State private var refreshTrigger = false
-    @State private var isPreviewGlowing = false
     @State private var showingFullPreview = false
     @State private var resumeImageId: String? = nil // 当前有对局存档的图案 id（单存档槽）
-    @StateObject private var tiltObserver = PreviewTiltObserver()
 
     private let config = PuzzleConfig.default
 
@@ -46,6 +17,9 @@ public struct LevelSelectView: View {
     public var body: some View {
         GeometryReader { proxy in
             ZStack {
+                // 暖棕兜底（即使背景图异常也绝不以纯黑呈现）
+                MaillardTheme.deep.ignoresSafeArea()
+
                 // 美拉德通用底纹（深可可棕织物纹理）
                 Image("maillard_bg_plain")
                     .resizable()
@@ -69,22 +43,9 @@ public struct LevelSelectView: View {
         .onAppear {
             refreshTrigger.toggle()
             refreshResumeState()
-            if GameSettings.shared.parallax3DEnabled {
-                tiltObserver.start()
-            }
         }
         .onChange(of: refreshTrigger) { _ in
             refreshResumeState()
-        }
-        .onDisappear {
-            tiltObserver.stop()
-        }
-        .onChange(of: GameSettings.shared.parallax3DEnabled) { enabled in
-            if enabled {
-                tiltObserver.start()
-            } else {
-                tiltObserver.stop()
-            }
         }
         .fullScreenCover(item: Binding(
             get: { selectedImageForPlay.map { PlayParams(item: $0.0, level: $0.1) } },
@@ -271,7 +232,8 @@ public struct LevelSelectView: View {
         let isDone = record?.isCompleted ?? false
         // 有存档判定走缓存的"图_级"复合键，避免随姿态视差的高频重渲染反复解码快照
         let hasResume = resumeImageId == "\(item.id)_\(currentLevel.id)"
-        let previewH = min(max(proxy.size.height - 202, 130), 240)
+        // 收紧顶栏/芯片/缩略图占位，保证 iPhone 17（402pt 高）下大按钮完整可见
+        let previewH = min(max(proxy.size.height - 232, 120), 240)
         // 小横屏（高度 < 390pt，如 SE）自动切换紧凑排版，防止内容溢出裁切
         let compact = proxy.size.height < 390
 
@@ -299,25 +261,7 @@ public struct LevelSelectView: View {
                     .stroke(MaillardTheme.gold.opacity(0.4), lineWidth: 1.5)
             )
             .shadow(color: Color.black.opacity(0.45), radius: 14, y: 6)
-            .shadow(color: MaillardTheme.gold.opacity(isPreviewGlowing ? 0.50 : 0.15), radius: isPreviewGlowing ? 24 : 10)
-            .scaleEffect(isPreviewGlowing ? 1.012 : 1.0)
-            // 随设备姿态的微倾斜视差（尊重设置页的视差开关）
-            .rotation3DEffect(
-                .degrees(Double(min(max(tiltObserver.roll, -0.3), 0.3)) * (GameSettings.shared.parallax3DEnabled ? 10 : 0)),
-                axis: (x: 0, y: 1, z: 0),
-                perspective: 0.6
-            )
-            .rotation3DEffect(
-                .degrees(Double(min(max(tiltObserver.pitch, -0.3), 0.3)) * (GameSettings.shared.parallax3DEnabled ? -8 : 0)),
-                axis: (x: 1, y: 0, z: 0),
-                perspective: 0.6
-            )
-            .animation(.linear(duration: 0.08), value: tiltObserver.roll)
-            .onAppear {
-                withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
-                    isPreviewGlowing = true
-                }
-            }
+            .shadow(color: MaillardTheme.gold.opacity(0.35), radius: 16)
 
             // 右：图案信息与大号开始按钮
             VStack(alignment: .leading, spacing: 8) {
@@ -396,10 +340,14 @@ public struct LevelSelectView: View {
                     .foregroundColor(hasResume ? MaillardTheme.cream : MaillardTheme.deep)
                     .frame(width: compact ? 224 : 250, height: compact ? 74 : 84)
                     .background(
-                        Image(hasResume ? "sprite_btn_brown" : "sprite_btn_gold")
-                            .resizable()
-                            .scaledToFit()
-                            .shadow(color: Color.black.opacity(0.45), radius: 12, y: 6)
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(hasResume ? MaillardTheme.caramelGradient : MaillardTheme.goldGradient)
+                            Image(hasResume ? "sprite_btn_brown" : "sprite_btn_gold")
+                                .resizable()
+                                .scaledToFit()
+                                .shadow(color: Color.black.opacity(0.45), radius: 12, y: 6)
+                        }
                     )
                 }
                 .padding(.bottom, 2)

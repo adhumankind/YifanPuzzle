@@ -19,7 +19,6 @@ public struct GamePlayView: View {
     @State private var finalElapsed: TimeInterval = 0
     @State private var isUnderlayOn: Bool = GameSettings.shared.showGhostOutline
     @State private var showGuide = !UserDefaults.standard.bool(forKey: "com.yifan.puzzle.guide_seen")
-    @StateObject private var tiltObserver = PreviewTiltObserver()
 
     // 内部持有的 SpriteKit 游戏场景
     @State private var scene: PuzzleGameScene? = nil
@@ -73,14 +72,6 @@ public struct GamePlayView: View {
                         break
                     }
                 }
-                .onChange(of: showingPreview) { showing in
-                    // 看原图浮层的姿态视差与视差开关联动
-                    if showing && GameSettings.shared.parallax3DEnabled {
-                        tiltObserver.start()
-                    } else {
-                        tiltObserver.stop()
-                    }
-                }
         }
     }
 
@@ -89,7 +80,8 @@ public struct GamePlayView: View {
     @ViewBuilder
     private func gameContent(proxy: GeometryProxy) -> some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            // 暖棕兜底（即使背景图异常也绝不以纯黑呈现）
+            MaillardTheme.deep.ignoresSafeArea()
 
             // SpriteKit 游戏场景
             if let scene = scene {
@@ -181,16 +173,19 @@ public struct GamePlayView: View {
                         Image(systemName: "eye.fill")
                         Text("看原图")
                     }
-                    .font(.system(size: 12, weight: .bold, design: .serif))
-                    .foregroundColor(MaillardTheme.deep)
-                    .frame(width: 94, height: 34)
-                    .background(
-                        Image("sprite_btn_gold")
-                            .resizable()
-                            .scaledToFit()
-                            .shadow(color: Color.black.opacity(0.30), radius: 5, y: 2)
-                    )
-                }
+                            .font(.system(size: 12, weight: .bold, design: .serif))
+                            .foregroundColor(MaillardTheme.deep)
+                            .frame(width: 94, height: 34)
+                            .background(
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 12).fill(MaillardTheme.goldGradient)
+                                    Image("sprite_btn_gold")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .shadow(color: Color.black.opacity(0.30), radius: 5, y: 2)
+                                }
+                            )
+                        }
 
                 // 参考底图快捷开关（极淡单色半透明，随时对照）
                 Button {
@@ -343,17 +338,6 @@ public struct GamePlayView: View {
                         .frame(maxWidth: proxy.size.width * 0.75, maxHeight: proxy.size.height * 0.75)
                         .cornerRadius(12)
                         .shadow(radius: 20)
-                        .rotation3DEffect(
-                            .degrees(Double(min(max(tiltObserver.roll, -0.3), 0.3)) * (GameSettings.shared.parallax3DEnabled ? 9 : 0)),
-                            axis: (x: 0, y: 1, z: 0),
-                            perspective: 0.6
-                        )
-                        .rotation3DEffect(
-                            .degrees(Double(min(max(tiltObserver.pitch, -0.3), 0.3)) * (GameSettings.shared.parallax3DEnabled ? -7 : 0)),
-                            axis: (x: 1, y: 0, z: 0),
-                            perspective: 0.6
-                        )
-                        .animation(.linear(duration: 0.08), value: tiltObserver.roll)
                 }
                 Button("关闭原图") {
                     withAnimation(.easeInOut(duration: 0.2)) {

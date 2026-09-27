@@ -6,8 +6,6 @@ public struct MainMenuView: View {
     @State private var showingLevelSelect = false
     @State private var showingSettings = false
     @State private var refreshTrigger = false
-    @State private var isBackdropBreathing = false
-    @State private var isLogoFloating = false
     @State private var resumeTarget: ResumeTarget? = nil
     @State private var showingResumeGame = false
 
@@ -17,25 +15,22 @@ public struct MainMenuView: View {
         NavigationStack {
             GeometryReader { proxy in
                 ZStack {
-                    // 美拉德主背景（GPT 生成的咖啡棕织物光晕纹理，缓慢呼吸式微缩放）
+                    // 暖棕兜底（即使背景图异常也绝不以纯黑呈现）
+                    MaillardTheme.deep.ignoresSafeArea()
+
+                    // 美拉德主背景（GPT 生成的咖啡棕织物光晕纹理）
                     Image("maillard_bg_main")
                         .resizable()
                         .scaledToFill()
-                        .scaleEffect(isBackdropBreathing ? 1.05 : 1.0)
                         .ignoresSafeArea()
                         .overlay(
                             LinearGradient(
-                                colors: [Color.black.opacity(0.10), Color.clear, Color.black.opacity(0.30)],
+                                colors: [Color.black.opacity(0.08), Color.clear, Color.black.opacity(0.24)],
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
                             .ignoresSafeArea()
                         )
-                        .onAppear {
-                            withAnimation(.easeInOut(duration: 7.0).repeatForever(autoreverses: true)) {
-                                isBackdropBreathing = true
-                            }
-                        }
 
                     HStack(spacing: 40) {
                         // 左侧：品牌 Logo 与艺术标识
@@ -46,12 +41,6 @@ public struct MainMenuView: View {
                                     .scaledToFit()
                                     .frame(height: 52)
                                     .shadow(color: Color.black.opacity(0.45), radius: 8, y: 4)
-                                    .offset(y: isLogoFloating ? -4 : 3)
-                                    .onAppear {
-                                        withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) {
-                                            isLogoFloating = true
-                                        }
-                                    }
 
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text("一凡爱拼图")
@@ -129,10 +118,13 @@ public struct MainMenuView: View {
                                 .foregroundColor(MaillardTheme.deep)
                                 .frame(width: 236, height: 83)
                                 .background(
-                                    Image("sprite_btn_gold")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .shadow(color: Color.black.opacity(0.40), radius: 10, y: 5)
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 24).fill(MaillardTheme.goldGradient)
+                                        Image("sprite_btn_gold")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .shadow(color: Color.black.opacity(0.40), radius: 10, y: 5)
+                                    }
                                 )
                             }
                             .buttonStyle(MaillardTheme.pressStyle)
@@ -149,10 +141,13 @@ public struct MainMenuView: View {
                                 .foregroundColor(MaillardTheme.cream)
                                 .frame(width: 236, height: 83)
                                 .background(
-                                    Image("sprite_btn_brown")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .shadow(color: Color.black.opacity(0.35), radius: 8, y: 4)
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 24).fill(MaillardTheme.caramelGradient)
+                                        Image("sprite_btn_brown")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .shadow(color: Color.black.opacity(0.35), radius: 8, y: 4)
+                                    }
                                 )
                             }
                             .buttonStyle(MaillardTheme.pressStyle)

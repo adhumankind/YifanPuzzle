@@ -141,9 +141,12 @@ public struct VictoryCelebrationView: View {
                         .foregroundColor(MaillardTheme.cream)
                         .frame(width: 150, height: 53)
                         .background(
-                            Image("sprite_btn_brown")
-                                .resizable()
-                                .scaledToFit()
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 16).fill(MaillardTheme.caramelGradient)
+                                Image("sprite_btn_brown")
+                                    .resizable()
+                                    .scaledToFit()
+                            }
                         )
                     }
                     .buttonStyle(MaillardTheme.pressStyle)
@@ -160,10 +163,13 @@ public struct VictoryCelebrationView: View {
                             .foregroundColor(MaillardTheme.deep)
                             .frame(width: 160, height: 56)
                             .background(
-                                Image("sprite_btn_gold")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .shadow(color: Color.black.opacity(0.35), radius: 8, y: 4)
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 16).fill(MaillardTheme.goldGradient)
+                                    Image("sprite_btn_gold")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .shadow(color: Color.black.opacity(0.35), radius: 8, y: 4)
+                                }
                             )
                         }
                         .buttonStyle(MaillardTheme.pressStyle)
@@ -180,9 +186,13 @@ public struct VictoryCelebrationView: View {
                         .foregroundColor(onNext == nil ? MaillardTheme.deep : MaillardTheme.cream)
                         .frame(width: 150, height: 53)
                         .background(
-                            Image(onNext == nil ? "sprite_btn_gold" : "sprite_btn_brown")
-                                .resizable()
-                                .scaledToFit()
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(onNext == nil ? MaillardTheme.goldGradient : MaillardTheme.caramelGradient)
+                                Image(onNext == nil ? "sprite_btn_gold" : "sprite_btn_brown")
+                                    .resizable()
+                                    .scaledToFit()
+                            }
                         )
                     }
                     .buttonStyle(MaillardTheme.pressStyle)
@@ -191,10 +201,13 @@ public struct VictoryCelebrationView: View {
             }
             .padding(32)
             .background(
-                Image("maillard_card")
-                    .resizable()
-                    .scaledToFill()
-                    .clipped()
+                ZStack {
+                    MaillardTheme.espresso
+                    Image("maillard_card")
+                        .resizable()
+                        .scaledToFill()
+                        .clipped()
+                }
             )
             .cornerRadius(24)
             .overlay(
