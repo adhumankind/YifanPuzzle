@@ -4,6 +4,7 @@ import SpriteKit
 /// 对局主容器视图（纯横屏 HUD + SpriteKit 底层场景）
 public struct GamePlayView: View {
     @Environment(\.dismiss) var dismiss
+    @Environment(\.scenePhase) var scenePhase
     @State private var currentImageItem: PuzzleImageItem
     @State private var currentLevel: PuzzleLevel
 
@@ -218,6 +219,19 @@ public struct GamePlayView: View {
             }
             .onChange(of: GameSettings.shared.parallax3DEnabled) { enabled in
                 scene?.applyParallaxSettingChanged(enabled: enabled)
+            }
+            .onChange(of: scenePhase) { phase in
+                switch phase {
+                case .active:
+                    if !showingSettings && !showingVictory {
+                        timerActive = true
+                    }
+                case .inactive, .background:
+                    timerActive = false
+                    scene?.cancelActiveDragging()
+                @unknown default:
+                    break
+                }
             }
         }
     }

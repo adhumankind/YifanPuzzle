@@ -581,4 +581,22 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         activeDraggedPieces.removeAll()
         dragStartPiecePositions.removeAll()
     }
+
+    /// 系统中断保护（电话呼入/下拉通知中心/控制中心触发 touchesCancelled 时安全复位）
+    public func cancelActiveDragging() {
+        guard !activeDraggedPieces.isEmpty else { return }
+        let dragged = activeDraggedPieces
+        activeDraggedPieces = []
+        isDraggingDivider = false
+
+        for piece in dragged {
+            piece.animateDrop()
+        }
+        saveCurrentSession()
+    }
+
+    public override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesCancelled(touches, with: event)
+        cancelActiveDragging()
+    }
 }
