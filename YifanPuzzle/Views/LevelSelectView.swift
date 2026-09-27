@@ -5,6 +5,7 @@ public struct LevelSelectView: View {
     @Environment(\.dismiss) var dismiss
     @State private var selectedLevelIndex: Int = 0
     @State private var selectedImageForPlay: (PuzzleImageItem, PuzzleLevel)? = nil
+    @State private var refreshTrigger = false
 
     private let config = PuzzleConfig.default
 
@@ -45,6 +46,7 @@ public struct LevelSelectView: View {
                         Text("\(ProgressManager.shared.completedCount())")
                             .foregroundColor(.white)
                             .font(.system(size: 15, weight: .bold))
+                            .id(refreshTrigger)
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
@@ -99,6 +101,7 @@ public struct LevelSelectView: View {
                             LevelImageCard(item: item, level: currentLevel) {
                                 selectedImageForPlay = (item, currentLevel)
                             }
+                            .id("\(item.id)-\(currentLevel.id)-\(refreshTrigger)")
                         }
                     }
                     .padding(.horizontal, 28)
@@ -111,7 +114,10 @@ public struct LevelSelectView: View {
         .navigationBarBackButtonHidden(true)
         .fullScreenCover(item: Binding(
             get: { selectedImageForPlay.map { PlayParams(item: $0.0, level: $0.1) } },
-            set: { _ in selectedImageForPlay = nil }
+            set: { _ in
+                selectedImageForPlay = nil
+                refreshTrigger.toggle()
+            }
         )) { params in
             GamePlayView(imageItem: params.item, level: params.level)
         }
