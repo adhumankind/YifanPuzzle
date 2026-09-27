@@ -9,3 +9,4 @@ DerivedData/
 *.log
 generated_images/
 scripts/gh.zip
+.zcode/

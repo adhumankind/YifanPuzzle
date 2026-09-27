@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 胜利庆祝与结算视图
+/// 胜利庆祝与结算视图（美拉德香槟金成就主题）
 public struct VictoryCelebrationView: View {
     public let imageItem: PuzzleImageItem
     public let level: PuzzleLevel
@@ -35,43 +35,47 @@ public struct VictoryCelebrationView: View {
             VStack(spacing: 16) {
                 // 奖杯与成就勋章
                 Image(systemName: "trophy.fill")
-                    .font(.system(size: 56))
-                    .foregroundColor(.yellow)
-                    .shadow(color: .yellow.opacity(0.6), radius: 12)
+                    .font(.system(size: 54))
+                    .foregroundColor(MaillardTheme.gold)
+                    .shadow(color: MaillardTheme.gold.opacity(0.65), radius: 14)
 
                 Text("挑战成功！完美拼合")
-                    .font(.system(size: 26, weight: .heavy, design: .rounded))
-                    .foregroundColor(.white)
+                    .font(.system(size: 26, weight: .heavy, design: .serif))
+                    .foregroundColor(MaillardTheme.cream)
 
                 Text("你已完成《\(imageItem.title)》· 第\(level.id)级 (\(level.pieceCount)块)")
                     .font(.system(size: 14))
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(MaillardTheme.muted)
 
                 HStack(spacing: 24) {
                     VStack(spacing: 4) {
                         Text("本次用时")
                             .font(.caption)
-                            .foregroundColor(.white.opacity(0.6))
+                            .foregroundColor(MaillardTheme.muted)
                         Text(formatTime(elapsedTime))
                             .font(.system(size: 20, weight: .bold, design: .monospaced))
-                            .foregroundColor(.cyan)
+                            .foregroundColor(MaillardTheme.gold)
                     }
 
                     if let best = ProgressManager.shared.getRecord(imageId: imageItem.id, levelId: level.id)?.bestTimeInSeconds {
                         VStack(spacing: 4) {
                             Text("最佳纪录")
                                 .font(.caption)
-                                .foregroundColor(.white.opacity(0.6))
+                                .foregroundColor(MaillardTheme.muted)
                             Text(formatTime(best))
                                 .font(.system(size: 20, weight: .bold, design: .monospaced))
-                                .foregroundColor(.yellow)
+                                .foregroundColor(MaillardTheme.caramel)
                         }
                     }
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 12)
-                .background(Color.white.opacity(0.1))
+                .background(MaillardTheme.warmGlass)
                 .cornerRadius(14)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(MaillardTheme.warmStroke, lineWidth: 0.8)
+                )
 
                 HStack(spacing: 16) {
                     Button {
@@ -81,12 +85,16 @@ public struct VictoryCelebrationView: View {
                             Image(systemName: "arrow.counterclockwise")
                             Text("再拼一次")
                         }
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.system(size: 14, weight: .bold, design: .serif))
+                        .foregroundColor(MaillardTheme.cream)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
-                        .background(Color.white.opacity(0.18))
+                        .background(MaillardTheme.warmGlass)
                         .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(MaillardTheme.warmStroke, lineWidth: 0.8)
+                        )
                     }
 
                     if let nextAction = onNext {
@@ -97,12 +105,13 @@ public struct VictoryCelebrationView: View {
                                 Image(systemName: "forward.fill")
                                 Text("下一幅图")
                             }
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.black)
+                            .font(.system(size: 14, weight: .bold, design: .serif))
+                            .foregroundColor(MaillardTheme.deep)
                             .padding(.horizontal, 20)
                             .padding(.vertical, 10)
-                            .background(Color.yellow)
+                            .background(MaillardTheme.goldGradient)
                             .cornerRadius(12)
+                            .shadow(color: MaillardTheme.gold.opacity(0.35), radius: 8, y: 3)
                         }
                     }
 
@@ -113,24 +122,29 @@ public struct VictoryCelebrationView: View {
                             Image(systemName: "square.grid.2x2")
                             Text("返回关卡")
                         }
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(onNext == nil ? .black : .white)
+                        .font(.system(size: 14, weight: .bold, design: .serif))
+                        .foregroundColor(onNext == nil ? MaillardTheme.deep : MaillardTheme.cream)
                         .padding(.horizontal, 18)
                         .padding(.vertical, 10)
-                        .background(onNext == nil ? Color.cyan : Color.white.opacity(0.18))
+                        .background(onNext == nil ? AnyShapeStyle(MaillardTheme.goldGradient) : AnyShapeStyle(MaillardTheme.warmGlass))
                         .cornerRadius(12)
                     }
                 }
                 .padding(.top, 10)
             }
             .padding(32)
-            .background(Color(red: 0.14, green: 0.17, blue: 0.23))
+            .background(
+                Image("maillard_card")
+                    .resizable()
+                    .scaledToFill()
+                    .clipped()
+            )
             .cornerRadius(24)
             .overlay(
                 RoundedRectangle(cornerRadius: 24)
-                    .stroke(Color.white.opacity(0.2), lineWidth: 1.5)
+                    .stroke(MaillardTheme.gold.opacity(0.35), lineWidth: 1.5)
             )
-            .shadow(radius: 30)
+            .shadow(color: Color.black.opacity(0.55), radius: 30)
             .scaleEffect(appearScale)
             .opacity(appearOpacity)
             .onAppear {

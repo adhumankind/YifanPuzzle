@@ -33,6 +33,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
     private var isDraggingDivider: Bool = false
     private var highestZIndex: CGFloat = 100
     private var rotationGestureRecognizer: UIRotationGestureRecognizer?
+    private var woodBackdropNode: SKSpriteNode?
 
     // 外部回调
     public var onProgressUpdate: ((Int, Int) -> Void)? // (已拼好数, 总数)
@@ -50,7 +51,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         self.currentSplitRatio = CGFloat(GameSettings.shared.splitRatio)
         super.init(size: size)
         self.scaleMode = .resizeFill
-        self.backgroundColor = UIColor(red: 0.14, green: 0.16, blue: 0.20, alpha: 1.0)
+        self.backgroundColor = MaillardTheme.ui.sceneBackground
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -120,15 +121,31 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
     private func setupBackgroundAndBoard() {
         // 木纹/绒布桌面底色
         let matNode = SKShapeNode(rect: CGRect(origin: .zero, size: size))
-        matNode.fillColor = UIColor(red: 0.16, green: 0.18, blue: 0.22, alpha: 1.0)
+        matNode.fillColor = MaillardTheme.ui.mat
         matNode.strokeColor = .clear
         matNode.zPosition = -10
         addChild(matNode)
 
+        // 胡桃木纹桌面材质（GPT 生成，按 cover 等比铺满避免拉伸变形）
+        let woodTexture = SKTexture(imageNamed: "maillard_board")
+        let woodTexSize = woodTexture.size()
+        if woodTexSize.width > 0 && woodTexSize.height > 0 {
+            let coverScale = max(size.width / woodTexSize.width, size.height / woodTexSize.height)
+            let woodNode = SKSpriteNode(
+                texture: woodTexture,
+                size: CGSize(width: woodTexSize.width * coverScale, height: woodTexSize.height * coverScale)
+            )
+            woodNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
+            woodNode.zPosition = -9
+            woodNode.alpha = 0.92
+            self.woodBackdropNode = woodNode
+            addChild(woodNode)
+        }
+
         // 拼图底板底座
         boardBackgroundNode = SKShapeNode(rect: boardRect, cornerRadius: 8)
-        boardBackgroundNode.fillColor = UIColor(red: 0.10, green: 0.12, blue: 0.15, alpha: 0.95)
-        boardBackgroundNode.strokeColor = UIColor(white: 1.0, alpha: 0.15)
+        boardBackgroundNode.fillColor = MaillardTheme.ui.boardFill
+        boardBackgroundNode.strokeColor = MaillardTheme.ui.boardStroke
         boardBackgroundNode.lineWidth = 2.0
         boardBackgroundNode.zPosition = 1
         addChild(boardBackgroundNode)
@@ -143,15 +160,25 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         // 拼图边缘外框线
         boardOutlineNode = SKShapeNode(rect: boardRect, cornerRadius: 8)
         boardOutlineNode.fillColor = .clear
-        boardOutlineNode.strokeColor = UIColor(red: 0.35, green: 0.65, blue: 0.95, alpha: 0.45)
+        boardOutlineNode.strokeColor = MaillardTheme.ui.ghostOutline
         boardOutlineNode.lineWidth = 1.5
         boardOutlineNode.zPosition = 3
         addChild(boardOutlineNode)
     }
 
+    /// 场景尺寸变化（首次布局校准）时保持木纹背景 cover 铺满
+    public override func didChangeSize() {
+        super.didChangeSize()
+        guard let wood = woodBackdropNode, size.width > 0, size.height > 0,
+              let texSize = wood.texture?.size(), texSize.width > 0, texSize.height > 0 else { return }
+        let coverScale = max(size.width / texSize.width, size.height / texSize.height)
+        wood.size = CGSize(width: texSize.width * coverScale, height: texSize.height * coverScale)
+        wood.position = CGPoint(x: size.width / 2, y: size.height / 2)
+    }
+
     private func setupDivider() {
         let dividerX = size.width * currentSplitRatio
-        dividerNode = SKSpriteNode(color: UIColor(white: 1.0, alpha: 0.18), size: CGSize(width: 4, height: size.height))
+        dividerNode = SKSpriteNode(color: MaillardTheme.ui.divider, size: CGSize(width: 4, height: size.height))
         dividerNode.position = CGPoint(x: dividerX, y: size.height / 2)
         dividerNode.zPosition = 40
         addChild(dividerNode)
@@ -159,8 +186,8 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         // 分隔条中间手柄（可触摸抓取区）
         dividerHandleNode = SKShapeNode(circleOfRadius: 18)
         dividerHandleNode.position = CGPoint(x: dividerX, y: size.height / 2)
-        dividerHandleNode.fillColor = UIColor(red: 0.25, green: 0.55, blue: 0.95, alpha: 0.9)
-        dividerHandleNode.strokeColor = UIColor.white
+        dividerHandleNode.fillColor = MaillardTheme.ui.dividerHandle
+        dividerHandleNode.strokeColor = MaillardTheme.ui.dividerHandleStroke
         dividerHandleNode.lineWidth = 2.0
         dividerHandleNode.zPosition = 41
         addChild(dividerHandleNode)

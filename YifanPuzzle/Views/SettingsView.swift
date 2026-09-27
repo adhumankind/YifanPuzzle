@@ -11,7 +11,7 @@ public struct SettingsView: View {
     public var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 0.12, green: 0.14, blue: 0.18).ignoresSafeArea()
+                MaillardTheme.deep.ignoresSafeArea()
 
                 Form {
                     Section {
@@ -20,16 +20,16 @@ public struct SettingsView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("拼图碎片自由角度摆放")
                                     .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(MaillardTheme.cream)
                                 Text("开启后碎片散落带有随机旋转角度，需人工双指旋转调整方向对准后方可吸附；关闭后全部正向摆放无需旋转。")
                                     .font(.system(size: 12))
-                                    .foregroundColor(.white.opacity(0.65))
+                                    .foregroundColor(MaillardTheme.muted)
                             }
                             .padding(.vertical, 4)
                         }
                     } header: {
                         Text("核心操作模式")
-                            .foregroundColor(.cyan)
+                            .foregroundColor(MaillardTheme.gold)
                     }
 
                     Section {
@@ -49,7 +49,7 @@ public struct SettingsView: View {
                         Toggle("陀螺仪 3D 景深视差效果", isOn: $settings.parallax3DEnabled)
                     } header: {
                         Text("视听与触觉反馈")
-                            .foregroundColor(.cyan)
+                            .foregroundColor(MaillardTheme.gold)
                     }
 
                     Section {
@@ -65,10 +65,11 @@ public struct SettingsView: View {
                         }
                     } header: {
                         Text("存档数据")
-                            .foregroundColor(.gray)
+                            .foregroundColor(MaillardTheme.muted)
                     }
                 }
                 .scrollContentBackground(.hidden)
+                .tint(MaillardTheme.caramel)
             }
             .navigationTitle("游戏设置")
             .navigationBarTitleDisplayMode(.inline)
@@ -77,7 +78,7 @@ public struct SettingsView: View {
                     Button("完成") {
                         dismiss()
                     }
-                    .foregroundColor(.cyan)
+                    .foregroundColor(MaillardTheme.gold)
                 }
             }
             .alert("确认重置？", isPresented: $showingResetAlert) {

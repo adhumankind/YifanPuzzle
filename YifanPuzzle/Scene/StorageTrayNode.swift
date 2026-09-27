@@ -21,8 +21,8 @@ public final class StorageTrayNode: SKNode {
         // 托盘底座：带有微圆角和 3D 毛玻璃质感半透明深色托盘
         let bgRect = CGRect(x: -trayWidth / 2, y: -trayHeight / 2, width: trayWidth, height: trayHeight)
         self.backgroundNode = SKShapeNode(rect: bgRect, cornerRadius: 18)
-        self.backgroundNode.fillColor = UIColor(red: 0.12, green: 0.14, blue: 0.18, alpha: 0.88)
-        self.backgroundNode.strokeColor = UIColor(white: 1.0, alpha: 0.22)
+        self.backgroundNode.fillColor = MaillardTheme.ui.trayBackground
+        self.backgroundNode.strokeColor = MaillardTheme.ui.trayStroke
         self.backgroundNode.lineWidth = 1.5
 
         super.init()
@@ -38,8 +38,8 @@ public final class StorageTrayNode: SKNode {
             let slotRect = CGRect(x: -slotW / 2, y: -slotH / 2, width: slotW, height: slotH)
             let slot = SKShapeNode(rect: slotRect, cornerRadius: 10)
             slot.position = CGPoint(x: cx, y: 0)
-            slot.fillColor = UIColor(white: 0.05, alpha: 0.6)
-            slot.strokeColor = UIColor(white: 1.0, alpha: 0.12)
+            slot.fillColor = MaillardTheme.ui.slot
+            slot.strokeColor = MaillardTheme.ui.slotStroke
             slot.lineWidth = 1.0
             slot.name = "tray_slot_\(i)"
 
@@ -47,7 +47,7 @@ public final class StorageTrayNode: SKNode {
             let label = SKLabelNode(fontNamed: "PingFangSC-Semibold")
             label.text = "\(i + 1)"
             label.fontSize = 14
-            label.fontColor = UIColor(white: 1.0, alpha: 0.25)
+            label.fontColor = MaillardTheme.ui.slotLabel
             label.verticalAlignmentMode = .center
             label.horizontalAlignmentMode = .center
             slot.addChild(label)
@@ -111,9 +111,9 @@ public final class StorageTrayNode: SKNode {
         if slotIndex < slotNodes.count {
             let slot = slotNodes[slotIndex]
             let highlight = SKAction.sequence([
-                SKAction.run { slot.fillColor = UIColor(red: 0.0, green: 0.8, blue: 1.0, alpha: 0.35) },
+                SKAction.run { slot.fillColor = MaillardTheme.ui.slotPulse },
                 SKAction.wait(forDuration: 0.15),
-                SKAction.run { slot.fillColor = UIColor(white: 0.05, alpha: 0.6) }
+                SKAction.run { slot.fillColor = MaillardTheme.ui.slot }
             ])
             slot.run(highlight)
         }

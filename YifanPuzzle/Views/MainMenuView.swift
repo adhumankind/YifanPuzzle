@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 游戏主菜单视图（横屏沉浸式卡片式 UI）
+/// 游戏主菜单视图（横屏沉浸式美拉德暖棕高级感 UI）
 public struct MainMenuView: View {
     @ObservedObject var settings = GameSettings.shared
     @State private var showingLevelSelect = false
@@ -13,42 +13,45 @@ public struct MainMenuView: View {
         NavigationStack {
             GeometryReader { proxy in
                 ZStack {
-                    // 渐变天空与自然背景
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.12, green: 0.15, blue: 0.24),
-                            Color(red: 0.18, green: 0.25, blue: 0.38),
-                            Color(red: 0.14, green: 0.20, blue: 0.28)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                    .ignoresSafeArea()
+                    // 美拉德主背景（GPT 生成的咖啡棕织物光晕纹理）
+                    Image("maillard_bg_main")
+                        .resizable()
+                        .scaledToFill()
+                        .ignoresSafeArea()
+                        .overlay(
+                            LinearGradient(
+                                colors: [Color.black.opacity(0.10), Color.clear, Color.black.opacity(0.30)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                            .ignoresSafeArea()
+                        )
 
                     HStack(spacing: 40) {
                         // 左侧：品牌 Logo 与艺术标识
                         VStack(alignment: .leading, spacing: 14) {
-                            HStack(spacing: 12) {
+                            HStack(spacing: 14) {
                                 Image(systemName: "puzzlepiece.extension.fill")
-                                    .font(.system(size: 44, weight: .bold))
-                                    .foregroundColor(.cyan)
-                                    .shadow(color: .cyan.opacity(0.6), radius: 10)
+                                    .font(.system(size: 42, weight: .bold))
+                                    .foregroundColor(MaillardTheme.gold)
+                                    .shadow(color: MaillardTheme.gold.opacity(0.55), radius: 10)
 
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: 3) {
                                     Text("一凡拼图")
-                                        .font(.system(size: 38, weight: .heavy, design: .rounded))
-                                        .foregroundColor(.white)
-                                        .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+                                        .font(.system(size: 38, weight: .heavy, design: .serif))
+                                        .foregroundColor(MaillardTheme.cream)
+                                        .shadow(color: Color.black.opacity(0.45), radius: 5, y: 2)
 
-                                    Text("Yifan Puzzle · 触手可及的匠心手感")
-                                        .font(.system(size: 13, weight: .medium))
-                                        .foregroundColor(.white.opacity(0.7))
+                                    Text("YIFAN PUZZLE · 触手可及的匠心手感")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .tracking(1.5)
+                                        .foregroundColor(MaillardTheme.muted)
                                 }
                             }
 
                             Text("精选 10 款绚丽天空与林木原画，5 级进阶递增，配合 3D 浮雕厚度与智能磁吸，重拾指尖拼合的美好时光。")
                                 .font(.system(size: 14))
-                                .foregroundColor(.white.opacity(0.8))
+                                .foregroundColor(MaillardTheme.cream.opacity(0.82))
                                 .lineSpacing(4)
                                 .frame(maxWidth: 360, alignment: .leading)
 
@@ -73,21 +76,19 @@ public struct MainMenuView: View {
                             } label: {
                                 HStack {
                                     Image(systemName: "play.fill")
-                                        .font(.title2)
+                                        .font(.title3)
                                     Text("开始游戏")
-                                        .font(.system(size: 20, weight: .bold))
+                                        .font(.system(size: 20, weight: .bold, design: .serif))
                                 }
-                                .foregroundColor(.white)
+                                .foregroundColor(MaillardTheme.deep)
                                 .frame(width: 240, height: 60)
-                                .background(
-                                    LinearGradient(
-                                        colors: [Color.blue, Color.cyan],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
+                                .background(MaillardTheme.goldGradient)
                                 .cornerRadius(18)
-                                .shadow(color: .blue.opacity(0.5), radius: 12, y: 4)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 18)
+                                        .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                                )
+                                .shadow(color: MaillardTheme.gold.opacity(0.40), radius: 14, y: 5)
                             }
 
                             Button {
@@ -95,17 +96,17 @@ public struct MainMenuView: View {
                             } label: {
                                 HStack {
                                     Image(systemName: "gearshape.fill")
-                                        .font(.title3)
+                                        .font(.body)
                                     Text("游戏设置")
-                                        .font(.system(size: 17, weight: .semibold))
+                                        .font(.system(size: 17, weight: .semibold, design: .serif))
                                 }
-                                .foregroundColor(.white)
+                                .foregroundColor(MaillardTheme.cream)
                                 .frame(width: 240, height: 50)
-                                .background(Color.white.opacity(0.12))
+                                .background(MaillardTheme.warmGlass)
                                 .cornerRadius(16)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 16)
-                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                        .stroke(MaillardTheme.warmStroke, lineWidth: 1)
                                 )
                             }
                         }
@@ -135,15 +136,19 @@ private struct BadgeItem: View {
     var body: some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.cyan)
+                .font(.system(size: 16, weight: .bold, design: .serif))
+                .foregroundColor(MaillardTheme.gold)
             Text(title)
                 .font(.system(size: 11))
-                .foregroundColor(.white.opacity(0.6))
+                .foregroundColor(MaillardTheme.muted)
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 14)
         .padding(.vertical, 8)
-        .background(Color.white.opacity(0.08))
+        .background(MaillardTheme.warmGlass)
         .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(MaillardTheme.warmStroke, lineWidth: 0.8)
+        )
     }
 }

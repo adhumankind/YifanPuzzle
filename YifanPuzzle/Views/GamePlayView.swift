@@ -47,20 +47,21 @@ public struct GamePlayView: View {
                         } label: {
                             Image(systemName: "chevron.left")
                                 .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(MaillardTheme.cream)
                                 .frame(width: 40, height: 40)
-                                .background(Color.black.opacity(0.55))
+                                .background(MaillardTheme.warmGlass)
+                                .overlay(Circle().stroke(MaillardTheme.warmStroke, lineWidth: 0.8))
                                 .clipShape(Circle())
                         }
 
                         // 关卡信息与进度
                         VStack(alignment: .leading, spacing: 2) {
                             Text(currentImageItem.title)
-                                .font(.system(size: 15, weight: .bold))
-                                .foregroundColor(.white)
+                                .font(.system(size: 15, weight: .bold, design: .serif))
+                                .foregroundColor(MaillardTheme.cream)
                             Text("第\(currentLevel.id)级 · 进度: \(placedCount)/\(totalCount > 0 ? totalCount : currentLevel.pieceCount)")
                                 .font(.system(size: 11))
-                                .foregroundColor(.white.opacity(0.7))
+                                .foregroundColor(MaillardTheme.muted)
                         }
 
                         Spacer()
@@ -68,15 +69,19 @@ public struct GamePlayView: View {
                         // 计时器显示
                         HStack(spacing: 6) {
                             Image(systemName: "stopwatch.fill")
-                                .foregroundColor(.yellow)
+                                .foregroundColor(MaillardTheme.gold)
                             Text(formatTime(elapsedTime))
                                 .font(.system(size: 15, weight: .bold, design: .monospaced))
-                                .foregroundColor(.white)
+                                .foregroundColor(MaillardTheme.cream)
                         }
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
-                        .background(Color.black.opacity(0.5))
+                        .background(MaillardTheme.warmGlass)
                         .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(MaillardTheme.warmStroke, lineWidth: 0.8)
+                        )
 
                         // 原图预览按钮
                         Button {
@@ -88,12 +93,13 @@ public struct GamePlayView: View {
                                 Image(systemName: "eye.fill")
                                 Text("看原图")
                             }
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(.white)
+                            .font(.system(size: 13, weight: .bold, design: .serif))
+                            .foregroundColor(MaillardTheme.deep)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(Color.blue.opacity(0.85))
+                            .background(MaillardTheme.goldGradient)
                             .cornerRadius(12)
+                            .shadow(color: MaillardTheme.gold.opacity(0.30), radius: 6, y: 2)
                         }
 
                         // 局中快速设置按钮（随时切换自由角度/音效）
@@ -102,9 +108,10 @@ public struct GamePlayView: View {
                         } label: {
                             Image(systemName: "gearshape.fill")
                                 .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(MaillardTheme.cream)
                                 .frame(width: 36, height: 36)
-                                .background(Color.white.opacity(0.18))
+                                .background(MaillardTheme.warmGlass)
+                                .overlay(Circle().stroke(MaillardTheme.warmStroke, lineWidth: 0.8))
                                 .clipShape(Circle())
                         }
                     }
@@ -139,11 +146,15 @@ public struct GamePlayView: View {
                                     showingPreview = false
                                 }
                             }
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.system(size: 14, weight: .bold, design: .serif))
                             .padding(.horizontal, 20)
                             .padding(.vertical, 8)
-                            .background(Color.white.opacity(0.2))
-                            .foregroundColor(.white)
+                            .background(MaillardTheme.warmGlass)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(MaillardTheme.warmStroke, lineWidth: 0.8)
+                            )
+                            .foregroundColor(MaillardTheme.cream)
                             .cornerRadius(10)
                         }
                     }
@@ -174,21 +185,21 @@ public struct GamePlayView: View {
                 // 首次加载/高阶大关卡切片渲染遮罩过渡动画
                 if isLoadingPieces {
                     ZStack {
-                        Color(red: 0.10, green: 0.12, blue: 0.16).ignoresSafeArea()
+                        MaillardTheme.deep.ignoresSafeArea()
 
                         VStack(spacing: 16) {
                             ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .cyan))
+                                .progressViewStyle(CircularProgressViewStyle(tint: MaillardTheme.gold))
                                 .scaleEffect(1.6)
 
                             VStack(spacing: 6) {
                                 Text("正在为您精心雕琢 \(currentLevel.pieceCount) 块 3D 拼图...")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .font(.system(size: 16, weight: .bold, design: .serif))
+                                    .foregroundColor(MaillardTheme.cream)
 
                                 Text("程序化贝塞尔锯齿切片 & 浮雕光影贴图合成中")
                                     .font(.system(size: 12))
-                                    .foregroundColor(.white.opacity(0.6))
+                                    .foregroundColor(MaillardTheme.muted)
                             }
                         }
                     }

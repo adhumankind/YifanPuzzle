@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 关卡选择视图（5 等级先缓后陡梯度切换，横向翻页式卡片）
+/// 关卡选择视图（5 等级先缓后陡梯度切换，横向翻页式卡片，美拉德暖棕主题）
 public struct LevelSelectView: View {
     @Environment(\.dismiss) var dismiss
     @State private var selectedLevelIndex: Int = 0
@@ -14,7 +14,12 @@ public struct LevelSelectView: View {
     public var body: some View {
         GeometryReader { proxy in
             ZStack {
-                Color(red: 0.10, green: 0.12, blue: 0.16).ignoresSafeArea()
+                // 美拉德通用底纹（深可可棕织物纹理）
+                Image("maillard_bg_plain")
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                    .overlay(Color.black.opacity(0.16).ignoresSafeArea())
 
                 VStack(spacing: 12) {
                     // 顶部导航栏
@@ -26,33 +31,42 @@ public struct LevelSelectView: View {
                                 Image(systemName: "chevron.left")
                                 Text("返回主页")
                             }
-                            .foregroundColor(.white)
+                            .foregroundColor(MaillardTheme.cream)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 8)
-                            .background(Color.white.opacity(0.12))
+                            .background(MaillardTheme.warmGlass)
                             .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(MaillardTheme.warmStroke, lineWidth: 0.8)
+                            )
                         }
 
                         Spacer()
 
                         Text("选择挑战等级与图案")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(.white)
+                            .font(.system(size: 20, weight: .bold, design: .serif))
+                            .foregroundColor(MaillardTheme.cream)
+                            .shadow(color: Color.black.opacity(0.35), radius: 3, y: 1)
 
                         Spacer()
 
                         // 当前解锁总星数
-                        HStack(spacing: 4) {
-                            Image(systemName: "star.fill").foregroundColor(.yellow)
+                        HStack(spacing: 5) {
+                            Image(systemName: "star.fill").foregroundColor(MaillardTheme.gold)
                             Text("\(ProgressManager.shared.completedCount())")
-                                .foregroundColor(.white)
-                                .font(.system(size: 15, weight: .bold))
+                                .foregroundColor(MaillardTheme.cream)
+                                .font(.system(size: 15, weight: .bold, design: .serif))
                                 .id(refreshTrigger)
                         }
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, 13)
                         .padding(.vertical, 6)
-                        .background(Color.white.opacity(0.1))
+                        .background(MaillardTheme.warmGlass)
                         .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(MaillardTheme.warmStroke, lineWidth: 0.8)
+                        )
                     }
                     .padding(.leading, max(24, proxy.safeAreaInsets.leading + 12))
                     .padding(.trailing, max(24, proxy.safeAreaInsets.trailing + 12))
@@ -75,18 +89,35 @@ public struct LevelSelectView: View {
                                     HStack(spacing: 6) {
                                         if !unlocked {
                                             Image(systemName: "lock.fill").font(.caption)
+                                                .foregroundColor(MaillardTheme.muted.opacity(0.7))
                                         } else {
-                                            Image(systemName: "sparkles").font(.caption).foregroundColor(selectedLevelIndex == idx ? .black : .yellow)
+                                            Image(systemName: "sparkles").font(.caption)
+                                                .foregroundColor(selectedLevelIndex == idx ? MaillardTheme.deep : MaillardTheme.gold)
                                         }
                                         Text("第\(lvl.id)级: \(lvl.pieceCount)块")
-                                            .font(.system(size: 14, weight: .bold))
+                                            .font(.system(size: 14, weight: .bold, design: .serif))
                                     }
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 10)
-                                    .foregroundColor(selectedLevelIndex == idx ? .black : (unlocked ? .white : .white.opacity(0.35)))
-                                    .background(selectedLevelIndex == idx ? Color.cyan : Color.white.opacity(0.12))
-                                    .cornerRadius(12)
+                                    .foregroundColor(
+                                        selectedLevelIndex == idx ? MaillardTheme.deep
+                                        : (unlocked ? MaillardTheme.cream : MaillardTheme.muted.opacity(0.5))
+                                    )
+                                    .background(
+                                        Group {
+                                            if selectedLevelIndex == idx {
+                                                RoundedRectangle(cornerRadius: 12).fill(MaillardTheme.goldGradient)
+                                            } else {
+                                                RoundedRectangle(cornerRadius: 12).fill(MaillardTheme.warmGlass)
+                                            }
+                                        }
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(selectedLevelIndex == idx ? Color.white.opacity(0.30) : MaillardTheme.warmStroke, lineWidth: 0.8)
+                                    )
                                     .scaleEffect(selectedLevelIndex == idx ? 1.04 : 1.0)
+                                    .shadow(color: selectedLevelIndex == idx ? MaillardTheme.gold.opacity(0.35) : Color.clear, radius: 8, y: 2)
                                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedLevelIndex)
                                 }
                                 .disabled(!unlocked)
@@ -167,24 +198,28 @@ private struct LevelImageCard: View {
                         .scaledToFill()
                         .frame(width: 280, height: 158)
                         .clipped()
-                        .cornerRadius(14)
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(MaillardTheme.gold.opacity(0.35), lineWidth: 1)
+                        )
                 } else {
                     Rectangle()
-                        .fill(Color.gray.opacity(0.3))
+                        .fill(MaillardTheme.surface)
                         .frame(width: 280, height: 158)
-                        .cornerRadius(14)
+                        .cornerRadius(12)
                 }
 
                 if isDone {
                     HStack(spacing: 4) {
-                        Image(systemName: "checkmark.circle.fill")
+                        Image(systemName: "checkmark.seal.fill")
                         Text("已完成")
                     }
                     .font(.caption.bold())
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(Color.green.opacity(0.85))
-                    .foregroundColor(.white)
+                    .background(MaillardTheme.goldGradient)
+                    .foregroundColor(MaillardTheme.deep)
                     .cornerRadius(8)
                     .padding(8)
                 } else if hasResume {
@@ -195,8 +230,8 @@ private struct LevelImageCard: View {
                     .font(.caption.bold())
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(Color.orange.opacity(0.9))
-                    .foregroundColor(.white)
+                    .background(MaillardTheme.caramel)
+                    .foregroundColor(MaillardTheme.deep)
                     .cornerRadius(8)
                     .padding(8)
                 }
@@ -205,8 +240,8 @@ private struct LevelImageCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text(item.title)
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.system(size: 18, weight: .bold, design: .serif))
+                        .foregroundColor(MaillardTheme.cream)
                     Spacer()
                     HStack(spacing: 4) {
                         Image(systemName: "sparkles")
@@ -214,16 +249,16 @@ private struct LevelImageCard: View {
                         Text(item.theme)
                             .font(.caption.bold())
                     }
-                    .foregroundColor(.cyan)
+                    .foregroundColor(MaillardTheme.gold)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
-                    .background(Color.cyan.opacity(0.15))
+                    .background(MaillardTheme.gold.opacity(0.14))
                     .cornerRadius(6)
                 }
 
                 Text(item.description)
                     .font(.system(size: 12))
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundColor(MaillardTheme.muted)
                     .lineLimit(2)
                     .frame(height: 32, alignment: .topLeading)
 
@@ -232,10 +267,10 @@ private struct LevelImageCard: View {
                     ForEach(item.tags.prefix(3), id: \.self) { tag in
                         Text("#\(tag)")
                             .font(.system(size: 10))
-                            .foregroundColor(.white.opacity(0.6))
+                            .foregroundColor(MaillardTheme.muted.opacity(0.85))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.white.opacity(0.06))
+                            .background(MaillardTheme.warmGlass)
                             .cornerRadius(4)
                     }
                 }
@@ -248,15 +283,23 @@ private struct LevelImageCard: View {
                             Text("最佳: \(formatDisplayTime(best))")
                                 .font(.caption2.bold())
                         }
-                        .foregroundColor(.yellow)
+                        .foregroundColor(MaillardTheme.gold)
                     }
                     Spacer()
                     Button(hasResume ? "继续拼图" : "立即拼图", action: onPlay)
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.system(size: 13, weight: .bold, design: .serif))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
-                        .background(hasResume ? Color.orange : Color.blue)
-                        .foregroundColor(.white)
+                        .background(
+                            Group {
+                                if hasResume {
+                                    RoundedRectangle(cornerRadius: 8).fill(MaillardTheme.caramelGradient)
+                                } else {
+                                    RoundedRectangle(cornerRadius: 8).fill(MaillardTheme.goldGradient)
+                                }
+                            }
+                        )
+                        .foregroundColor(MaillardTheme.deep)
                         .cornerRadius(8)
                 }
                 .padding(.top, 4)
@@ -264,7 +307,17 @@ private struct LevelImageCard: View {
             .frame(width: 280)
         }
         .padding(14)
-        .background(Color.white.opacity(0.08))
+        .background(
+            Image("maillard_card")
+                .resizable()
+                .scaledToFill()
+                .clipped()
+        )
         .cornerRadius(18)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(MaillardTheme.warmStroke, lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.35), radius: 12, y: 5)
     }
 }
