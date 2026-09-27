@@ -8,6 +8,8 @@ public struct MainMenuView: View {
     @State private var refreshTrigger = false
     @State private var isBackdropBreathing = false
     @State private var isLogoFloating = false
+    @State private var resumeTarget: ResumeTarget? = nil
+    @State private var showingResumeGame = false
 
     public init() {}
 
@@ -86,8 +88,35 @@ public struct MainMenuView: View {
 
                         Spacer()
 
-                        // 右侧：主操作按钮组
+                        // 右侧：主操作按钮组（有对局存档时顶部出现断点直达横幅）
                         VStack(spacing: 18) {
+                            if let target = resumeTarget {
+                                Button {
+                                    showingResumeGame = true
+                                } label: {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "play.circle.fill")
+                                            .font(.title3)
+                                        VStack(alignment: .leading, spacing: 1) {
+                                            Text("继续上次拼图")
+                                                .font(.system(size: 15, weight: .bold, design: .serif))
+                                            Text("《\(target.item.title)》· 第\(target.level.id)级 (\(target.level.pieceCount)块)")
+                                                .font(.system(size: 11))
+                                                .opacity(0.8)
+                                        }
+                                    }
+                                    .foregroundColor(MaillardTheme.cream)
+                                    .frame(width: 320, height: 58)
+                                    .background(MaillardTheme.warmGlass)
+                                    .cornerRadius(14)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 14)
+                                            .stroke(MaillardTheme.gold.opacity(0.4), lineWidth: 1)
+                                    )
+                                }
+                                .buttonStyle(MaillardTheme.pressStyle)
+                            }
+
                             Button {
                                 showingLevelSelect = true
                             } label: {
@@ -137,14 +166,41 @@ public struct MainMenuView: View {
             }
             .sheet(isPresented: $showingSettings, onDismiss: {
                 refreshTrigger.toggle()
+                loadResumeTarget()
             }) {
                 SettingsView()
             }
+            .fullScreenCover(isPresented: $showingResumeGame) {
+                if let target = resumeTarget {
+                    GamePlayView(imageItem: target.item, level: target.level)
+                }
+            }
             .onAppear {
                 refreshTrigger.toggle()
+                loadResumeTarget()
             }
         }
     }
+    /// 读取对局存档，解析断点直达目标（图 + 级）
+    private func loadResumeTarget() {
+        guard let snap = SessionSaveManager.shared.load() else {
+            resumeTarget = nil
+            return
+        }
+        let level = PuzzleConfig.default.levels.first { $0.id == snap.levelId }
+        let item = PuzzleImageRepository.shared.allItems().first { $0.id == snap.imageId }
+        if let level = level, let item = item {
+            resumeTarget = ResumeTarget(item: item, level: level)
+        } else {
+            resumeTarget = nil
+        }
+    }
+}
+
+/// 断点直达目标（有对局存档时主菜单横幅使用）
+private struct ResumeTarget {
+    let item: PuzzleImageItem
+    let level: PuzzleLevel
 }
 
 private struct BadgeItem: View {
