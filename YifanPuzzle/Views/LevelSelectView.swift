@@ -7,6 +7,7 @@ public struct LevelSelectView: View {
     @State private var selectedImageIndex: Int = 0
     @State private var selectedImageForPlay: (PuzzleImageItem, PuzzleLevel)? = nil
     @State private var refreshTrigger = false
+    @State private var isPreviewGlowing = false
 
     private let config = PuzzleConfig.default
 
@@ -205,6 +206,13 @@ public struct LevelSelectView: View {
                     .stroke(MaillardTheme.gold.opacity(0.4), lineWidth: 1.5)
             )
             .shadow(color: Color.black.opacity(0.45), radius: 14, y: 6)
+            .shadow(color: MaillardTheme.gold.opacity(isPreviewGlowing ? 0.50 : 0.15), radius: isPreviewGlowing ? 24 : 10)
+            .scaleEffect(isPreviewGlowing ? 1.012 : 1.0)
+            .onAppear {
+                withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
+                    isPreviewGlowing = true
+                }
+            }
 
             // 右：图案信息与大号开始按钮
             VStack(alignment: .leading, spacing: 8) {

@@ -6,6 +6,8 @@ public struct MainMenuView: View {
     @State private var showingLevelSelect = false
     @State private var showingSettings = false
     @State private var refreshTrigger = false
+    @State private var isBackdropBreathing = false
+    @State private var isLogoFloating = false
 
     public init() {}
 
@@ -13,10 +15,11 @@ public struct MainMenuView: View {
         NavigationStack {
             GeometryReader { proxy in
                 ZStack {
-                    // 美拉德主背景（GPT 生成的咖啡棕织物光晕纹理）
+                    // 美拉德主背景（GPT 生成的咖啡棕织物光晕纹理，缓慢呼吸式微缩放）
                     Image("maillard_bg_main")
                         .resizable()
                         .scaledToFill()
+                        .scaleEffect(isBackdropBreathing ? 1.05 : 1.0)
                         .ignoresSafeArea()
                         .overlay(
                             LinearGradient(
@@ -26,6 +29,11 @@ public struct MainMenuView: View {
                             )
                             .ignoresSafeArea()
                         )
+                        .onAppear {
+                            withAnimation(.easeInOut(duration: 7.0).repeatForever(autoreverses: true)) {
+                                isBackdropBreathing = true
+                            }
+                        }
 
                     HStack(spacing: 40) {
                         // 左侧：品牌 Logo 与艺术标识
@@ -36,6 +44,12 @@ public struct MainMenuView: View {
                                     .scaledToFit()
                                     .frame(height: 52)
                                     .shadow(color: Color.black.opacity(0.45), radius: 8, y: 4)
+                                    .offset(y: isLogoFloating ? -4 : 3)
+                                    .onAppear {
+                                        withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) {
+                                            isLogoFloating = true
+                                        }
+                                    }
 
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text("一凡爱拼图")

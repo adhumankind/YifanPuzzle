@@ -84,9 +84,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: build/YifanPuzzle-unsigned.ipa
-          name: "一凡拼图 发布 ${{ github.ref_name }}"
+          name: "一凡爱拼图 发布 ${{ github.ref_name }}"
           body: |
-            ### 一凡拼图 (Yifan Puzzle) iOS 越狱/自签安装包
+            ### 一凡爱拼图 (Yifan Puzzle) iOS 越狱/自签安装包
 
             本 IPA 为未签名包，下载后可通过以下任意工具完成签名并安装到你的 iPhone：
             - **Sideloadly** (推荐，支持 Windows/Mac，使用免费 Apple ID 自签名)

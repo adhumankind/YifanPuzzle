@@ -278,6 +278,7 @@ public struct GamePlayView: View {
                 scene?.applyRotationSettingChanged(allowFree: allow)
             }
             .onChange(of: GameSettings.shared.showGhostOutline) { show in
+                isUnderlayOn = show
                 scene?.applyGhostOutlineSettingChanged(showGhost: show)
             }
             .onChange(of: GameSettings.shared.parallax3DEnabled) { enabled in
