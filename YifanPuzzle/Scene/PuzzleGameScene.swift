@@ -657,7 +657,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         let w = boardRect.width * piece.pieceData.normalizedSize.width
         let h = boardRect.height * piece.pieceData.normalizedSize.height
         let solidPath = UIBezierPath(roundedRect: CGRect(x: -w / 2, y: -h / 2, width: w, height: h), cornerRadius: 6).cgPath
-        let dashedPath = solidPath.copy(dashingWithPhase: 0, length: [9, 6])
+        let dashedPath = solidPath.copy(dashingWithPhase: 0, lengths: [9, 6])
         let target = SKShapeNode(path: dashedPath)
         target.strokeColor = MaillardTheme.ui.ghostOutline
         target.fillColor = SKColor(red: 1.0, green: 0.78, blue: 0.40, alpha: 0.10)
