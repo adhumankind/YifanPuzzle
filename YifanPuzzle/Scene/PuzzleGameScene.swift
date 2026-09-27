@@ -445,6 +445,8 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
                 }
             }
             GameFeedbackEngine.shared.triggerSnap()
+            let placedCount = pieceNodes.values.filter { $0.isPlaced }.count
+            onProgressUpdate?(placedCount, pieceDatas.count)
             saveCurrentSession()
         } else {
             // C. 检查未归位碎片之间是否有相邻咬合成组
