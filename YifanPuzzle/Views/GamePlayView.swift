@@ -157,14 +157,12 @@ public struct GamePlayView: View {
                 // 底部左侧：无限辅助道具（不限次数，专注拼图乐趣不设阻碍）
                 HStack(spacing: 18) {
                     Button {
-                        GameFeedbackEngine.shared.triggerPickup()
                         scene?.giveHint()
                     } label: {
                         propIcon("sprite_magnifier")
                     }
 
                     Button {
-                        GameFeedbackEngine.shared.triggerPickup()
                         scene?.autoPlaceOnePiece()
                     } label: {
                         propIcon("sprite_wand")

@@ -29,8 +29,11 @@ public struct VictoryCelebrationView: View {
     }
 
     public var body: some View {
-        ZStack {
-            Color.black.opacity(0.72).ignoresSafeArea()
+        GeometryReader { geo in
+            // 小屏（如 SE 横屏 375pt 高）下整体等比缩小，保证按钮永远完整可见
+            let fitScale = min(1.0, geo.size.height / 440.0)
+            ZStack {
+                Color.black.opacity(0.72).ignoresSafeArea()
 
             VStack(spacing: 16) {
                 // 奖杯与成就勋章
@@ -148,13 +151,14 @@ public struct VictoryCelebrationView: View {
                     .stroke(MaillardTheme.gold.opacity(0.35), lineWidth: 1.5)
             )
             .shadow(color: Color.black.opacity(0.55), radius: 30)
-            .scaleEffect(appearScale)
+            .scaleEffect(appearScale * fitScale)
             .opacity(appearOpacity)
             .onAppear {
                 withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) {
                     appearScale = 1.0
                     appearOpacity = 1.0
                 }
+            }
             }
         }
     }

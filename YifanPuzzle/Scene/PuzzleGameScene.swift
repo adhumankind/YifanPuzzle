@@ -601,7 +601,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
     /// 「找一找」道具：为一块未归位碎片给出提示（本体金色光环 + 正确板位高亮闪烁）
     public func giveHint() {
         guard let piece = selectAssistCandidate() else { return }
-        GameFeedbackEngine.shared.triggerPickup()
+        GameFeedbackEngine.shared.triggerHint()
 
         // 本体金色光环脉冲（扩散两轮）
         let radius = max(piece.surfaceSprite.size.width, piece.surfaceSprite.size.height) * 0.62
@@ -667,7 +667,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         piece.isPlaced = true
         let placedCount = pieceNodes.values.filter { $0.isPlaced }.count
         onProgressUpdate?(placedCount, pieceDatas.count)
-        GameFeedbackEngine.shared.triggerPickup()
+        GameFeedbackEngine.shared.triggerMagic()
         saveCurrentSession()
 
         spawnSparkles(at: piece.position, count: 12)

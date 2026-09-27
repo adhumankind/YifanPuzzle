@@ -185,8 +185,10 @@ public struct LevelSelectView: View {
         let isDone = record?.isCompleted ?? false
         let hasResume = SessionSaveManager.shared.load().map { $0.imageId == item.id && $0.levelId == currentLevel.id } ?? false
         let previewH = min(max(proxy.size.height - 202, 130), 240)
+        // 小横屏（高度 < 390pt，如 SE）自动切换紧凑排版，防止内容溢出裁切
+        let compact = proxy.size.height < 390
 
-        return HStack(spacing: 30) {
+        return HStack(spacing: compact ? 18 : 30) {
             Spacer(minLength: 0)
 
             // 左：高清大图预览
@@ -218,7 +220,7 @@ public struct LevelSelectView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 10) {
                     Text(item.title)
-                        .font(.system(size: 24, weight: .bold, design: .serif))
+                        .font(.system(size: compact ? 20 : 24, weight: .bold, design: .serif))
                         .foregroundColor(MaillardTheme.cream)
                     Text(item.theme)
                         .font(.system(size: 12, weight: .bold))
@@ -252,7 +254,7 @@ public struct LevelSelectView: View {
                 Text(item.description)
                     .font(.system(size: 13))
                     .foregroundColor(MaillardTheme.muted)
-                    .lineLimit(2)
+                    .lineLimit(compact ? 1 : 2)
                     .lineSpacing(3)
                     .frame(maxWidth: 460, alignment: .leading)
 
@@ -284,12 +286,12 @@ public struct LevelSelectView: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "play.fill")
-                            .font(.system(size: 19, weight: .bold))
+                            .font(.system(size: compact ? 17 : 19, weight: .bold))
                         Text(hasResume ? "继续拼图" : "开始拼图")
-                            .font(.system(size: 21, weight: .bold, design: .serif))
+                            .font(.system(size: compact ? 18 : 21, weight: .bold, design: .serif))
                     }
                     .foregroundColor(hasResume ? MaillardTheme.cream : MaillardTheme.deep)
-                    .frame(width: 250, height: 84)
+                    .frame(width: compact ? 224 : 250, height: compact ? 74 : 84)
                     .background(
                         Image(hasResume ? "sprite_btn_brown" : "sprite_btn_gold")
                             .resizable()

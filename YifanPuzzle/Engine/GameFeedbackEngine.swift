@@ -46,6 +46,36 @@ public final class GameFeedbackEngine {
             audioPlayers["win"] = pool
             playerIndices["win"] = 0
         }
+        if audioPlayers["magic"] == nil {
+            let pool = (0..<3).compactMap { _ in makeSyntheticSound(frequency: 880, duration: 0.3, type: .magic) }
+            audioPlayers["magic"] = pool
+            playerIndices["magic"] = 0
+        }
+        if audioPlayers["hint"] == nil {
+            let pool = (0..<3).compactMap { _ in makeSyntheticSound(frequency: 1560, duration: 0.22, type: .hint) }
+            audioPlayers["hint"] = pool
+            playerIndices["hint"] = 0
+        }
+    }
+
+    /// 播放「拼一块」魔法归位音效与触感
+    public func triggerMagic() {
+        if GameSettings.shared.hapticsEnabled {
+            impactMedium.impactOccurred(intensity: 0.55)
+        }
+        if GameSettings.shared.soundEnabled {
+            playSound("magic")
+        }
+    }
+
+    /// 播放「找一找」微光提示音效与轻触感
+    public func triggerHint() {
+        if GameSettings.shared.hapticsEnabled {
+            impactLight.impactOccurred(intensity: 0.35)
+        }
+        if GameSettings.shared.soundEnabled {
+            playSound("hint")
+        }
     }
 
     /// 播放拾取音效与触感
@@ -95,7 +125,7 @@ public final class GameFeedbackEngine {
         player.play()
     }
 
-    private enum SyntheticType { case snap, soft, chime }
+    private enum SyntheticType { case snap, soft, chime, magic, hint }
 
     /// 生成轻快清脆的 16-bit PCM WAV 音效
     private func makeSyntheticSound(frequency: Double, duration: Double, type: SyntheticType) -> AVAudioPlayer? {
@@ -104,25 +134,38 @@ public final class GameFeedbackEngine {
         var samples = [Int16]()
         samples.reserveCapacity(totalSamples)
 
+        var phase = 0.0
+
         for i in 0 ..< totalSamples {
-            let t = Double(i) / sampleRate
             let progress = Double(i) / Double(totalSamples)
 
-            // 音量包络衰减
+            // 音量包络与瞬时频率（魔法音随进度上扫）
             let envelope: Double
+            let freq: Double
             switch type {
             case .snap:
                 envelope = pow(1.0 - progress, 2.5) // 急速衰减，表现咔哒硬木质感
+                freq = frequency
             case .soft:
                 envelope = pow(1.0 - progress, 1.8)
+                freq = frequency
             case .chime:
                 envelope = (1.0 - progress) * (sin(progress * .pi * 4) * 0.2 + 0.8)
+                freq = frequency
+            case .magic:
+                // 上扫铃音：频率随进度从一半爬升到 1.5 倍，尾部带闪烁包络
+                freq = frequency * (0.75 + 0.75 * progress * progress)
+                envelope = pow(1.0 - progress, 1.1) * (0.72 + 0.28 * sin(progress * .pi * 5))
+            case .hint:
+                // 微光颤音：高频轻柔闪烁
+                envelope = pow(1.0 - progress, 1.5) * (0.72 + 0.28 * sin(progress * .pi * 12))
+                freq = frequency
             }
 
-            // 基础正弦波与谐波混响
-            let angle = 2.0 * .pi * frequency * t
-            let harmonic = 2.0 * .pi * (frequency * 1.5) * t
-            let raw = sin(angle) * 0.7 + sin(harmonic) * 0.3
+            // 相位积分（支持频率随时间变化）
+            phase += 2.0 * .pi * freq / sampleRate
+            let harmonic = phase * 1.5
+            let raw = sin(phase) * 0.7 + sin(harmonic) * 0.3
             let val = Int16(clamping: Int(raw * envelope * 28000.0))
             samples.append(val)
         }
