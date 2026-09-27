@@ -107,8 +107,9 @@ public struct GamePlayView: View {
                                 .clipShape(Circle())
                         }
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 12)
+                    .padding(.leading, max(24, proxy.safeAreaInsets.leading + 12))
+                    .padding(.trailing, max(24, proxy.safeAreaInsets.trailing + 12))
+                    .padding(.top, max(12, proxy.safeAreaInsets.top + 6))
 
                     Spacer()
                 }

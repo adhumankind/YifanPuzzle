@@ -12,103 +12,108 @@ public struct LevelSelectView: View {
     public init() {}
 
     public var body: some View {
-        ZStack {
-            Color(red: 0.10, green: 0.12, blue: 0.16).ignoresSafeArea()
+        GeometryReader { proxy in
+            ZStack {
+                Color(red: 0.10, green: 0.12, blue: 0.16).ignoresSafeArea()
 
-            VStack(spacing: 12) {
-                // 顶部导航栏
-                HStack {
-                    Button {
-                        dismiss()
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "chevron.left")
-                            Text("返回主页")
-                        }
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(Color.white.opacity(0.12))
-                        .cornerRadius(12)
-                    }
-
-                    Spacer()
-
-                    Text("选择挑战等级与图案")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.white)
-
-                    Spacer()
-
-                    // 当前解锁总星数
-                    HStack(spacing: 4) {
-                        Image(systemName: "star.fill").foregroundColor(.yellow)
-                        Text("\(ProgressManager.shared.completedCount())")
+                VStack(spacing: 12) {
+                    // 顶部导航栏
+                    HStack {
+                        Button {
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "chevron.left")
+                                Text("返回主页")
+                            }
                             .foregroundColor(.white)
-                            .font(.system(size: 15, weight: .bold))
-                            .id(refreshTrigger)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Color.white.opacity(0.12))
+                            .cornerRadius(12)
+                        }
+
+                        Spacer()
+
+                        Text("选择挑战等级与图案")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.white)
+
+                        Spacer()
+
+                        // 当前解锁总星数
+                        HStack(spacing: 4) {
+                            Image(systemName: "star.fill").foregroundColor(.yellow)
+                            Text("\(ProgressManager.shared.completedCount())")
+                                .foregroundColor(.white)
+                                .font(.system(size: 15, weight: .bold))
+                                .id(refreshTrigger)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.white.opacity(0.1))
+                        .cornerRadius(10)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.1))
-                    .cornerRadius(10)
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 12)
+                    .padding(.leading, max(24, proxy.safeAreaInsets.leading + 12))
+                    .padding(.trailing, max(24, proxy.safeAreaInsets.trailing + 12))
+                    .padding(.top, max(12, proxy.safeAreaInsets.top + 6))
 
-                // 等级选择分段器 (35, 70, 160, 350, 700 块)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(config.levels.indices, id: \.self) { idx in
-                            let lvl = config.levels[idx]
-                            let unlocked = ProgressManager.shared.isLevelUnlocked(lvl)
+                    // 等级选择分段器 (35, 70, 160, 350, 700 块)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(config.levels.indices, id: \.self) { idx in
+                                let lvl = config.levels[idx]
+                                let unlocked = ProgressManager.shared.isLevelUnlocked(lvl)
 
-                                Button {
-                                    if unlocked {
-                                        withAnimation(.easeInOut(duration: 0.2)) {
-                                            selectedLevelIndex = idx
+                                    Button {
+                                        if unlocked {
+                                            withAnimation(.easeInOut(duration: 0.2)) {
+                                                selectedLevelIndex = idx
+                                            }
                                         }
+                                    } label: {
+                                    HStack(spacing: 6) {
+                                        if !unlocked {
+                                            Image(systemName: "lock.fill").font(.caption)
+                                        }
+                                        Text("第\(lvl.id)级: \(lvl.pieceCount)块")
+                                            .font(.system(size: 14, weight: .bold))
                                     }
-                                } label: {
-                                HStack(spacing: 6) {
-                                    if !unlocked {
-                                        Image(systemName: "lock.fill").font(.caption)
-                                    }
-                                    Text("第\(lvl.id)级: \(lvl.pieceCount)块")
-                                        .font(.system(size: 14, weight: .bold))
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 10)
+                                    .foregroundColor(selectedLevelIndex == idx ? .black : (unlocked ? .white : .white.opacity(0.35)))
+                                    .background(selectedLevelIndex == idx ? Color.cyan : Color.white.opacity(0.12))
+                                    .cornerRadius(12)
                                 }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 10)
-                                .foregroundColor(selectedLevelIndex == idx ? .black : (unlocked ? .white : .white.opacity(0.35)))
-                                .background(selectedLevelIndex == idx ? Color.cyan : Color.white.opacity(0.12))
-                                .cornerRadius(12)
+                                .disabled(!unlocked)
                             }
-                            .disabled(!unlocked)
                         }
+                        .padding(.leading, max(24, proxy.safeAreaInsets.leading + 12))
+                        .padding(.trailing, max(24, proxy.safeAreaInsets.trailing + 12))
                     }
-                    .padding(.horizontal, 24)
-                }
 
-                // 当前选定等级下的图案展示列表
-                let currentLevel = config.levels[selectedLevelIndex]
-                let allItems = PuzzleImageRepository.shared.allItems()
-                let levelItems = allItems.filter { currentLevel.imageIds.contains($0.id) }
-                let displayItems = levelItems.isEmpty ? Array(allItems.prefix(2)) : levelItems
+                    // 当前选定等级下的图案展示列表
+                    let currentLevel = config.levels[selectedLevelIndex]
+                    let allItems = PuzzleImageRepository.shared.allItems()
+                    let levelItems = allItems.filter { currentLevel.imageIds.contains($0.id) }
+                    let displayItems = levelItems.isEmpty ? Array(allItems.prefix(2)) : levelItems
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 24) {
-                        ForEach(displayItems) { item in
-                            LevelImageCard(item: item, level: currentLevel) {
-                                selectedImageForPlay = (item, currentLevel)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 24) {
+                            ForEach(displayItems) { item in
+                                LevelImageCard(item: item, level: currentLevel) {
+                                    selectedImageForPlay = (item, currentLevel)
+                                }
+                                .id("\(item.id)-\(currentLevel.id)-\(refreshTrigger)")
                             }
-                            .id("\(item.id)-\(currentLevel.id)-\(refreshTrigger)")
                         }
+                        .padding(.leading, max(28, proxy.safeAreaInsets.leading + 16))
+                        .padding(.trailing, max(28, proxy.safeAreaInsets.trailing + 16))
+                        .padding(.vertical, 10)
                     }
-                    .padding(.horizontal, 28)
-                    .padding(.vertical, 10)
-                }
 
-                Spacer()
+                    Spacer()
+                }
             }
         }
         .navigationBarBackButtonHidden(true)
