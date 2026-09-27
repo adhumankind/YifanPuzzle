@@ -32,12 +32,13 @@ public final class GameFeedbackEngine {
     private func preloadSounds() {
         // 尝试从 Bundle 加载真实音频，若无则使用程序化生成的真实微敲击声
         if audioPlayers["snap"] == nil {
-            let pool = (0..<4).compactMap { _ in makeSyntheticSound(frequency: 880, duration: 0.08, type: .snap) }
+            // 多频变体轮播：连续吸附时音高自然微变，避免单调
+            let pool = [840.0, 880.0, 920.0, 960.0].compactMap { makeSyntheticSound(frequency: $0, duration: 0.08, type: .snap) }
             audioPlayers["snap"] = pool
             playerIndices["snap"] = 0
         }
         if audioPlayers["pickup"] == nil {
-            let pool = (0..<3).compactMap { _ in makeSyntheticSound(frequency: 440, duration: 0.05, type: .soft) }
+            let pool = [415.0, 440.0, 466.0].compactMap { makeSyntheticSound(frequency: $0, duration: 0.05, type: .soft) }
             audioPlayers["pickup"] = pool
             playerIndices["pickup"] = 0
         }

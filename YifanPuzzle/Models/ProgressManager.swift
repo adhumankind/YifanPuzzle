@@ -37,6 +37,15 @@ public final class ProgressManager {
             }
         }
 
+        public var conditionHint: String {
+            switch self {
+            case .firstWin: return "完成任意一关拼图"
+            case .noAssistWin: return "不使用任何道具完成一关"
+            case .level5Win: return "完成第 5 级 700 块挑战"
+            case .allImagesDone: return "全部图案至少通关一次"
+            }
+        }
+
         public var spriteName: String {
             switch self {
             case .firstWin: return "sprite_ach_first"

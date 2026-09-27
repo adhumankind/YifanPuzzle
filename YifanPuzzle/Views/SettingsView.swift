@@ -60,11 +60,16 @@ public struct SettingsView: View {
                                     .scaledToFit()
                                     .frame(height: 26)
                                     .opacity(entry.isUnlocked ? 1 : 0.35)
-                                Text(entry.achievement.title)
-                                    .font(.system(size: 15, weight: entry.isUnlocked ? .semibold : .regular))
-                                    .foregroundColor(entry.isUnlocked ? MaillardTheme.cream : MaillardTheme.muted.opacity(0.6))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(entry.achievement.title)
+                                        .font(.system(size: 15, weight: entry.isUnlocked ? .semibold : .regular))
+                                        .foregroundColor(entry.isUnlocked ? MaillardTheme.cream : MaillardTheme.muted.opacity(0.6))
+                                    Text(entry.achievement.conditionHint)
+                                        .font(.system(size: 11))
+                                        .foregroundColor(MaillardTheme.muted.opacity(0.55))
+                                }
                                 Spacer()
-                                Text(entry.isUnlocked ? "已达成" : "未解锁")
+                                Text(entry.isUnlocked ? "已达成" : "未达成")
                                     .font(.system(size: 11, weight: .bold))
                                     .foregroundColor(entry.isUnlocked ? MaillardTheme.gold : MaillardTheme.muted.opacity(0.5))
                             }
