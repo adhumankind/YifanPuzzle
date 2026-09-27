@@ -502,9 +502,10 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
                     // 对被咬合的整个碎片子群执行对齐微移和平滑归正角度
                     for p in pieceNodes.values where p.groupId == oldGroupId {
                         p.groupId = targetGroupId
-                        p.position = CGPoint(x: p.position.x + offsetX, y: p.position.y + offsetY)
+                        let targetPos = CGPoint(x: p.position.x + offsetX, y: p.position.y + offsetY)
+                        p.run(SKAction.move(to: targetPos, duration: 0.12))
                         if allowRotation {
-                            p.zRotation = dragged.zRotation
+                            p.run(SKAction.rotate(toAngle: dragged.zRotation, duration: 0.12, shortestUnitArc: true))
                         }
                     }
 
