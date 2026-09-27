@@ -447,7 +447,6 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
             let maxX = size.width * 0.85
             let clampedX = min(max(touchLocation.x, minX), maxX)
             let newRatio = clampedX / size.width
-            GameSettings.shared.splitRatio = Double(newRatio)
             dividerNode.position.x = clampedX
             dividerHandleNode.position.x = clampedX
             updateSplitRatio(newRatio)
@@ -477,6 +476,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
 
         if isDraggingDivider {
             isDraggingDivider = false
+            persistSplitRatio()
             return
         }
 
@@ -653,16 +653,18 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         }()
         ring.run(ringWave)
 
-        // 正确板位闪烁高亮（双闪后优雅消散）
+        // 正确板位闪烁高亮（虚线描边 + 抬高层级，密集碎片间依旧醒目；双闪后优雅消散）
         let w = boardRect.width * piece.pieceData.normalizedSize.width
         let h = boardRect.height * piece.pieceData.normalizedSize.height
-        let target = SKShapeNode(rect: CGRect(x: -w / 2, y: -h / 2, width: w, height: h), cornerRadius: 6)
+        let solidPath = UIBezierPath(roundedRect: CGRect(x: -w / 2, y: -h / 2, width: w, height: h), cornerRadius: 6).cgPath
+        let dashedPath = solidPath.copy(dashingWithPhase: 0, length: [9, 6], count: 2)
+        let target = SKShapeNode(path: dashedPath)
         target.strokeColor = MaillardTheme.ui.ghostOutline
         target.fillColor = SKColor(red: 1.0, green: 0.78, blue: 0.40, alpha: 0.10)
         target.lineWidth = 2.5
         target.glowWidth = 3
         target.position = piece.correctBoardPosition
-        target.zPosition = 20
+        target.zPosition = 35
         addChild(target)
 
         let flash = SKAction.sequence([
@@ -836,14 +838,25 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
 
     /// 系统中断保护（电话呼入/下拉通知中心/控制中心触发 touchesCancelled 时安全复位）
     public func cancelActiveDragging() {
+        // 分隔条拖动被中断（如来电）时也必须复位，否则后续所有触摸都会被误判为拖动滑块
+        if isDraggingDivider {
+            isDraggingDivider = false
+            persistSplitRatio()
+        }
+
         guard !activeDraggedPieces.isEmpty else { return }
         let dragged = activeDraggedPieces
         activeDraggedPieces = []
-        isDraggingDivider = false
 
         for piece in dragged {
             piece.animateDrop()
         }
+        saveCurrentSession()
+    }
+
+    /// 分隔条拖动结束后一次性持久化比例（拖动期间每帧写 UserDefaults 会触发无谓的界面重渲染）
+    private func persistSplitRatio() {
+        GameSettings.shared.splitRatio = Double(currentSplitRatio)
         saveCurrentSession()
     }
 
