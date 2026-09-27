@@ -357,8 +357,10 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
     }
 
     @objc private func handleTrayLongPress(_ gesture: UILongPressGestureRecognizer) {
-        guard gesture.state == .began else { return }
-        if trayNode.containsWorldPoint(gesture.location(in: self)) {
+        guard gesture.state == .began, let skView = gesture.view else { return }
+        // 手势坐标在 UIKit 视图坐标系，需转换为 SpriteKit 场景坐标系
+        let scenePoint = convertPoint(fromView: gesture.location(in: skView))
+        if trayNode.containsWorldPoint(scenePoint) {
             collectScatteredPieces()
         }
     }
