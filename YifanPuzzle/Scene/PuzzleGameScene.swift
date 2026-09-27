@@ -745,7 +745,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
                 )
                 up.timingMode = .easeOut
                 let down = SKAction.group([
-                    SKAction.move(by: CGVector(dx: CGFloat.random(in: -12...12), dy: CGFloat.random(in: -30...-16)), duration: 0.5),
+                    SKAction.move(by: CGVector(dx: CGFloat.random(in: -12...12), dy: CGFloat.random(in: -30 ... -16)), duration: 0.5),
                     SKAction.fadeOut(withDuration: 0.5)
                 ])
                 down.timingMode = .easeIn
