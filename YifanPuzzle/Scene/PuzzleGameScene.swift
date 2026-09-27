@@ -167,8 +167,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
     }
 
     /// 场景尺寸变化（首次布局校准）时保持木纹背景 cover 铺满
-    public override func didChangeSize() {
-        super.didChangeSize()
+    public func refreshWoodBackdropCover() {
         guard let wood = woodBackdropNode, size.width > 0, size.height > 0,
               let texSize = wood.texture?.size(), texSize.width > 0, texSize.height > 0 else { return }
         let coverScale = max(size.width / texSize.width, size.height / texSize.height)

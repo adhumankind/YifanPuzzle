@@ -27,6 +27,7 @@ public struct PuzzleGameViewRepresentable: UIViewRepresentable {
         // 尺寸变更自适应
         if uiView.bounds.size != scene.size && uiView.bounds.size.width > 0 {
             scene.size = uiView.bounds.size
+            scene.refreshWoodBackdropCover()
         }
     }
 }
