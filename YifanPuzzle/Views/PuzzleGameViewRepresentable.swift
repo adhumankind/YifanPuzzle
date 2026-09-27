@@ -16,10 +16,8 @@ public struct PuzzleGameViewRepresentable: UIViewRepresentable {
         skView.showsNodeCount = false
         skView.backgroundColor = .clear
 
-        // 优化高刷新率 ProMotion (120Hz) 以及节能策略
-        if #available(iOS 15.0, *) {
-            skView.preferredFrameRateRange = CAFrameRateRange(minimum: 30, maximum: 120, preferred: 60)
-        }
+        // 统一帧率基准为 60fps，兼顾流畅度与电池能耗
+        skView.preferredFramesPerSecond = 60
 
         skView.presentScene(scene)
         return skView
