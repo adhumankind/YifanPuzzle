@@ -1,4 +1,26 @@
 import SwiftUI
+import CoreMotion
+
+/// 选关页大图预览的轻量姿态观察器（独立实例，不与对局场景视差管理器抢占回调）
+private final class PreviewTiltObserver: ObservableObject {
+    @Published var roll: CGFloat = 0
+    @Published var pitch: CGFloat = 0
+    private let manager = CMMotionManager()
+
+    func start() {
+        guard manager.isDeviceMotionAvailable, !manager.isDeviceMotionActive else { return }
+        manager.deviceMotionUpdateInterval = 1.0 / 20.0
+        manager.startDeviceMotionUpdates(to: .main) { [weak self] motion, _ in
+            guard let motion = motion else { return }
+            self?.roll = CGFloat(motion.attitude.roll)
+            self?.pitch = CGFloat(motion.attitude.pitch)
+        }
+    }
+
+    func stop() {
+        manager.stopDeviceMotionUpdates()
+    }
+}
 
 /// 关卡选择视图（参考知名拼图游戏横屏布局：左大图预览 + 右信息与大按钮 + 底部缩略图切换）
 public struct LevelSelectView: View {
@@ -8,6 +30,7 @@ public struct LevelSelectView: View {
     @State private var selectedImageForPlay: (PuzzleImageItem, PuzzleLevel)? = nil
     @State private var refreshTrigger = false
     @State private var isPreviewGlowing = false
+    @StateObject private var tiltObserver = PreviewTiltObserver()
 
     private let config = PuzzleConfig.default
 
@@ -36,6 +59,22 @@ public struct LevelSelectView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            refreshTrigger.toggle()
+            if GameSettings.shared.parallax3DEnabled {
+                tiltObserver.start()
+            }
+        }
+        .onDisappear {
+            tiltObserver.stop()
+        }
+        .onChange(of: GameSettings.shared.parallax3DEnabled) { enabled in
+            if enabled {
+                tiltObserver.start()
+            } else {
+                tiltObserver.stop()
+            }
+        }
         .fullScreenCover(item: Binding(
             get: { selectedImageForPlay.map { PlayParams(item: $0.0, level: $0.1) } },
             set: { _ in
@@ -221,6 +260,18 @@ public struct LevelSelectView: View {
             .shadow(color: Color.black.opacity(0.45), radius: 14, y: 6)
             .shadow(color: MaillardTheme.gold.opacity(isPreviewGlowing ? 0.50 : 0.15), radius: isPreviewGlowing ? 24 : 10)
             .scaleEffect(isPreviewGlowing ? 1.012 : 1.0)
+            // 随设备姿态的微倾斜视差（尊重设置页的视差开关）
+            .rotation3DEffect(
+                .degrees(Double(min(max(tiltObserver.roll, -0.3), 0.3)) * (GameSettings.shared.parallax3DEnabled ? 10 : 0)),
+                axis: (x: 0, y: 1, z: 0),
+                perspective: 0.6
+            )
+            .rotation3DEffect(
+                .degrees(Double(min(max(tiltObserver.pitch, -0.3), 0.3)) * (GameSettings.shared.parallax3DEnabled ? -8 : 0)),
+                axis: (x: 1, y: 0, z: 0),
+                perspective: 0.6
+            )
+            .animation(.linear(duration: 0.08), value: tiltObserver.roll)
             .onAppear {
                 withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
                     isPreviewGlowing = true

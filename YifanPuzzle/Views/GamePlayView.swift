@@ -18,6 +18,7 @@ public struct GamePlayView: View {
     @State private var isLoadingPieces = true
     @State private var finalElapsed: TimeInterval = 0
     @State private var isUnderlayOn: Bool = GameSettings.shared.showGhostOutline
+    @State private var showGuide = !UserDefaults.standard.bool(forKey: "com.yifan.puzzle.guide_seen")
 
     // 内部持有的 SpriteKit 游戏场景
     @State private var scene: PuzzleGameScene? = nil
@@ -89,6 +90,11 @@ public struct GamePlayView: View {
 
             topHUD(proxy: proxy)
             propToolbar(proxy: proxy)
+
+            // 首次进入对局的轻量引导浮层（轻点任意处或 7 秒后自动淡出）
+            if showGuide {
+                guideOverlay
+            }
 
             // 原图高清浮层弹窗
             if showingPreview {
@@ -245,6 +251,65 @@ public struct GamePlayView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
         .padding(.leading, max(18, proxy.safeAreaInsets.leading + 10))
         .padding(.bottom, max(14, proxy.safeAreaInsets.bottom + 8))
+    }
+
+    // MARK: - 首次引导浮层
+
+    private var guideOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.45)
+                .ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    dismissGuide()
+                }
+
+            VStack(spacing: 14) {
+                Image("sprite_hand")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 92)
+                    .shadow(color: Color.black.opacity(0.4), radius: 8, y: 4)
+
+                Text("欢迎来到一凡爱拼图")
+                    .font(.system(size: 22, weight: .heavy, design: .serif))
+                    .foregroundColor(MaillardTheme.cream)
+
+                Text("拖动碎片到左侧拼图板，位置正确会自动咔哒吸附；\n左下角两只道具无限次帮你找位置、自动拼块。")
+                    .font(.system(size: 13))
+                    .foregroundColor(MaillardTheme.cream.opacity(0.85))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+
+                Text("轻点任意处开始")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(MaillardTheme.gold)
+                    .padding(.top, 4)
+            }
+            .padding(28)
+            .background(MaillardTheme.espresso.opacity(0.92))
+            .cornerRadius(20)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(MaillardTheme.gold.opacity(0.35), lineWidth: 1.2)
+            )
+            .shadow(color: Color.black.opacity(0.5), radius: 24)
+            .padding(.horizontal, 60)
+        }
+        .transition(.opacity)
+        .task {
+            try? await Task.sleep(nanoseconds: 7_000_000_000)
+            if showGuide {
+                dismissGuide()
+            }
+        }
+    }
+
+    private func dismissGuide() {
+        withAnimation(.easeInOut(duration: 0.35)) {
+            showGuide = false
+        }
+        UserDefaults.standard.set(true, forKey: "com.yifan.puzzle.guide_seen")
     }
 
     // MARK: - 原图高清浮层弹窗
