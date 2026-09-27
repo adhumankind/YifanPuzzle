@@ -522,10 +522,12 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
             GameFeedbackEngine.shared.triggerSnap()
             saveCurrentSession()
 
-            // 播放平滑弹簧入位与结算检测
+            // 播放平滑弹簧入位、四角金尘与结算检测
             for piece in dragged {
                 piece.animateSnap(to: piece.correctBoardPosition) { [weak self] in
-                    self?.checkGameCompletion()
+                    guard let self = self else { return }
+                    self.spawnCornerDust(for: piece)
+                    self.checkGameCompletion()
                 }
             }
         } else {
@@ -710,6 +712,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
             piece.animateSnap(to: piece.correctBoardPosition) { [weak self] in
                 guard let self = self else { return }
                 self.spawnSparkles(at: piece.correctBoardPosition, count: 8)
+                self.spawnCornerDust(for: piece)
                 GameFeedbackEngine.shared.triggerSnap()
                 self.checkGameCompletion()
             }
@@ -717,9 +720,42 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         piece.run(SKAction.sequence([lift, SKAction.wait(forDuration: 0.05), cast]), withKey: "magic_place")
     }
 
+    /// 碎片归位瞬间四角扬起的金尘微粒（先扬起后飘落，模拟落座震尘）
+    private func spawnCornerDust(for piece: PuzzlePieceNode) {
+        let w = piece.surfaceSprite.size.width
+        let h = piece.surfaceSprite.size.height
+        let corners = [
+            CGPoint(x: -w / 2, y: h / 2),
+            CGPoint(x: w / 2, y: h / 2),
+            CGPoint(x: -w / 2, y: -h / 2),
+            CGPoint(x: w / 2, y: -h / 2)
+        ]
+        for corner in corners {
+            for _ in 0..<2 {
+                let dot = SKShapeNode(circleOfRadius: CGFloat.random(in: 1.5...3))
+                dot.fillColor = SKColor(red: 1.0, green: 0.82, blue: 0.45, alpha: 0.9)
+                dot.strokeColor = .clear
+                dot.position = CGPoint(x: piece.position.x + corner.x, y: piece.position.y + corner.y)
+                dot.zPosition = 95
+                addChild(dot)
+
+                let up = SKAction.move(
+                    by: CGVector(dx: CGFloat.random(in: -8...8), dy: CGFloat.random(in: 10...22)),
+                    duration: 0.35
+                )
+                up.timingMode = .easeOut
+                let down = SKAction.group([
+                    SKAction.move(by: CGVector(dx: CGFloat.random(in: -12...12), dy: CGFloat.random(in: -30...-16)), duration: 0.5),
+                    SKAction.fadeOut(withDuration: 0.5)
+                ])
+                down.timingMode = .easeIn
+                dot.run(SKAction.sequence([up, down, SKAction.removeFromParent()]))
+            }
+        }
+    }
+
     /// 星光粒子绽放（辅助道具与归位时刻的通用点缀）
-    private func spawnSparkles(at point: CGPoint, count: Int) {
-        for i in 0..<count {
+    private func spawnSparkles(at point: CGPoint, count: Int) {        for i in 0..<count {
             let dotSize = CGFloat.random(in: 4...8)
             let dot = SKShapeNode(circleOfRadius: dotSize / 2)
             dot.fillColor = SKColor(
