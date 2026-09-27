@@ -365,7 +365,7 @@ public struct LevelSelectView: View {
                     .scaleEffect(selectedImageIndex == idx ? 1.05 : 1.0)
                     .animation(.spring(response: 0.28, dampingFraction: 0.7), value: selectedImageIndex)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(MaillardTheme.pressStyle)
             }
         }
         .padding(.vertical, 4)

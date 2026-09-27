@@ -419,8 +419,21 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         activeDraggedPieces = pieces
         dragStartTouchPoint = point
         dragStartPiecePositions.removeAll()
-        for p in pieces {
-            dragStartPiecePositions[p.pieceData.id] = p.position
+
+        // 拿起放大（1.0→1.06）会让手指下的纹理点向外漂移，反向补偿位置使大碎片也严丝合缝跟手
+        if let primary = pieces.first {
+            let grabVector = CGPoint(x: point.x - primary.position.x, y: point.y - primary.position.y)
+            let compensation = CGPoint(x: -grabVector.x * 0.06, y: -grabVector.y * 0.06)
+            for p in pieces {
+                p.position = CGPoint(x: p.position.x + compensation.x, y: p.position.y + compensation.y)
+                dragStartPiecePositions[p.pieceData.id] = p.position
+            }
+            // 触摸基准点同步平移，保证后续移动差值依旧 1:1 跟手
+            dragStartTouchPoint = CGPoint(x: point.x + compensation.x, y: point.y + compensation.y)
+        } else {
+            for p in pieces {
+                dragStartPiecePositions[p.pieceData.id] = p.position
+            }
         }
     }
 

@@ -132,6 +132,7 @@ public struct VictoryCelebrationView: View {
                                 .scaledToFit()
                         )
                     }
+                    .buttonStyle(MaillardTheme.pressStyle)
 
                     if let nextAction = onNext {
                         Button {
@@ -151,6 +152,7 @@ public struct VictoryCelebrationView: View {
                                     .shadow(color: Color.black.opacity(0.35), radius: 8, y: 4)
                             )
                         }
+                        .buttonStyle(MaillardTheme.pressStyle)
                     }
 
                     Button {
@@ -169,6 +171,7 @@ public struct VictoryCelebrationView: View {
                                 .scaledToFit()
                         )
                     }
+                    .buttonStyle(MaillardTheme.pressStyle)
                 }
                 .padding(.top, 10)
             }

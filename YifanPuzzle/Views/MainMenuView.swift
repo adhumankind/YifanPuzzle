@@ -106,6 +106,7 @@ public struct MainMenuView: View {
                                         .shadow(color: Color.black.opacity(0.40), radius: 10, y: 5)
                                 )
                             }
+                            .buttonStyle(MaillardTheme.pressStyle)
 
                             Button {
                                 showingSettings = true
@@ -125,6 +126,7 @@ public struct MainMenuView: View {
                                         .shadow(color: Color.black.opacity(0.35), radius: 8, y: 4)
                                 )
                             }
+                            .buttonStyle(MaillardTheme.pressStyle)
                         }
                         .padding(.trailing, max(40, proxy.safeAreaInsets.trailing + 20))
                     }

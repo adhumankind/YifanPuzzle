@@ -43,8 +43,25 @@ public enum MaillardTheme {
     /// 暖棕描边
     public static let warmStroke = Color(red: 0.878, green: 0.643, blue: 0.345, opacity: 0.28)
 
-    /// SpriteKit 场景用的 UIColor 版本色板
-    public enum ui {
+    /// 全局统一按压回弹样式
+    public static let pressStyle = MaillardPressStyle()
+}
+
+/// 美拉德统一按压回弹反馈（按下轻微缩小变暗，松手弹性回位）
+public struct MaillardPressStyle: ButtonStyle {
+    public init() {}
+
+    public func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.94 : 1.0)
+            .opacity(configuration.isPressed ? 0.88 : 1.0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
+    }
+}
+
+/// SpriteKit 场景用的 UIColor 版本色板
+public extension MaillardTheme {
+    enum ui {
         public static let sceneBackground = UIColor(red: 0.086, green: 0.059, blue: 0.039, alpha: 1.0)
         public static let mat = UIColor(red: 0.165, green: 0.114, blue: 0.075, alpha: 1.0)
         public static let boardFill = UIColor(red: 0.122, green: 0.082, blue: 0.055, alpha: 0.95)

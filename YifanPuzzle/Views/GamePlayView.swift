@@ -233,12 +233,14 @@ public struct GamePlayView: View {
             } label: {
                 propIcon("sprite_magnifier")
             }
+            .buttonStyle(MaillardTheme.pressStyle)
 
             Button {
                 scene?.autoPlaceOnePiece()
             } label: {
                 propIcon("sprite_wand")
             }
+            .buttonStyle(MaillardTheme.pressStyle)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
         .padding(.leading, max(18, proxy.safeAreaInsets.leading + 10))
