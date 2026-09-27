@@ -193,27 +193,53 @@ private struct LevelImageCard: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text(item.title)
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.white)
                     Spacer()
-                    Text(item.theme)
-                        .font(.caption)
-                        .foregroundColor(.cyan)
+                    HStack(spacing: 4) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 10))
+                        Text(item.theme)
+                            .font(.caption.bold())
+                    }
+                    .foregroundColor(.cyan)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.cyan.opacity(0.15))
+                    .cornerRadius(6)
                 }
 
                 Text(item.description)
                     .font(.system(size: 12))
-                    .foregroundColor(.white.opacity(0.65))
+                    .foregroundColor(.white.opacity(0.7))
                     .lineLimit(2)
+                    .frame(height: 32, alignment: .topLeading)
+
+                // 标签展示（大面积天空、宠物等线索提示）
+                HStack(spacing: 6) {
+                    ForEach(item.tags.prefix(3), id: \.self) { tag in
+                        Text("#\(tag)")
+                            .font(.system(size: 10))
+                            .foregroundColor(.white.opacity(0.6))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.white.opacity(0.06))
+                            .cornerRadius(4)
+                    }
+                }
 
                 HStack {
                     if let best = record?.bestTimeInSeconds, best > 0 {
-                        Text("最佳: \(formatDisplayTime(best))")
-                            .font(.caption2.bold())
-                            .foregroundColor(.yellow)
+                        HStack(spacing: 4) {
+                            Image(systemName: "stopwatch.fill")
+                                .font(.system(size: 10))
+                            Text("最佳: \(formatDisplayTime(best))")
+                                .font(.caption2.bold())
+                        }
+                        .foregroundColor(.yellow)
                     }
                     Spacer()
                     Button(hasResume ? "继续拼图" : "立即拼图", action: onPlay)
