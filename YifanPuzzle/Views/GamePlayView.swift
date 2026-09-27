@@ -144,6 +144,9 @@ public struct GamePlayView: View {
                     Text(currentImageItem.title)
                         .font(.system(size: 15, weight: .bold, design: .serif))
                         .foregroundColor(MaillardTheme.cream)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: 220, alignment: .leading)
                     Text("第\(currentLevel.id)级 · 进度: \(placedCount)/\(totalCount > 0 ? totalCount : currentLevel.pieceCount)" + bestSuffix)
                         .font(.system(size: 11))
                         .foregroundColor(MaillardTheme.muted)
@@ -284,7 +287,7 @@ public struct GamePlayView: View {
                     .font(.system(size: 22, weight: .heavy, design: .serif))
                     .foregroundColor(MaillardTheme.cream)
 
-                Text("拖动碎片到左侧拼图板，位置正确会自动咔哒吸附；\n左下角两只道具无限次帮你找位置、自动拼块。")
+                Text("拖动碎片到左侧拼图板，位置正确会自动咔哒吸附；\n左下角道具无限帮你找位置、自动拼块，长按托盘可一键收拢碎片。")
                     .font(.system(size: 13))
                     .foregroundColor(MaillardTheme.cream.opacity(0.85))
                     .multilineTextAlignment(.center)

@@ -34,6 +34,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
     private var isDraggingDivider: Bool = false
     private var highestZIndex: CGFloat = 100
     private var rotationGestureRecognizer: UIRotationGestureRecognizer?
+    private var trayPressRecognizer: UILongPressGestureRecognizer?
     private var woodBackdropNode: SKSpriteNode?
     /// 本局是否使用过辅助道具（用于"独立完成"成就判定）
     public private(set) var usedAssistProps: Bool = false
@@ -346,6 +347,20 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         rotationGesture.delegate = self
         view.addGestureRecognizer(rotationGesture)
         self.rotationGestureRecognizer = rotationGesture
+
+        // 长按托盘：一键把散落区最近的碎片收进空格（无限次）
+        let trayPress = UILongPressGestureRecognizer(target: self, action: #selector(handleTrayLongPress(_:)))
+        trayPress.minimumPressDuration = 0.5
+        trayPress.delegate = self
+        view.addGestureRecognizer(trayPress)
+        self.trayPressRecognizer = trayPress
+    }
+
+    @objc private func handleTrayLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began else { return }
+        if trayNode.containsWorldPoint(gesture.location(in: self)) {
+            collectScatteredPieces()
+        }
     }
 
     public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
@@ -754,6 +769,40 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         }
     }
 
+    /// 托盘一键收拢：把散落区离托盘最近的碎片自动收进空格（无限次，辅助不设阻碍）
+    public func collectScatteredPieces() {
+        let emptySlots = trayNode.emptySlotIndices()
+        guard !emptySlots.isEmpty else { return }
+
+        let candidates = pieceNodes.values.filter {
+            !$0.isPlaced && $0.traySlotIndex == nil
+                && !activeDraggedPieces.contains($0)
+                && $0.action(forKey: "magic_place") == nil
+                && $0.action(forKey: "collect") == nil
+        }
+        guard !candidates.isEmpty else { return }
+
+        usedAssistProps = true
+        GameFeedbackEngine.shared.triggerMagic()
+
+        let trayCenter = trayNode.position
+        let sorted = candidates.sorted {
+            abs($0.position.x - trayCenter.x) + abs($0.position.y - trayCenter.y)
+                < abs($1.position.x - trayCenter.x) + abs($1.position.y - trayCenter.y)
+        }
+
+        for (slotIndex, piece) in zip(emptySlots, sorted.prefix(emptySlots.count)) {
+            highestZIndex += 10
+            piece.zPosition = highestZIndex
+            trayNode.placePiece(piece, intoSlot: slotIndex)
+            piece.run(SKAction.sequence([
+                SKAction.rotate(byAngle: .random(in: -0.8...0.8), duration: 0.3),
+                SKAction.rotate(toAngle: 0, duration: 0.2, shortestUnitArc: true)
+            ]), withKey: "collect")
+        }
+        saveCurrentSession()
+    }
+
     /// 星光粒子绽放（辅助道具与归位时刻的通用点缀）
     private func spawnSparkles(at point: CGPoint, count: Int) {        for i in 0..<count {
             let dotSize = CGFloat.random(in: 4...8)
@@ -862,6 +911,10 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         if let gesture = rotationGestureRecognizer {
             view.removeGestureRecognizer(gesture)
             self.rotationGestureRecognizer = nil
+        }
+        if let trayPress = trayPressRecognizer {
+            view.removeGestureRecognizer(trayPress)
+            self.trayPressRecognizer = nil
         }
 
         // 主动解除节点树与纹理引用，防止大碎片关卡残留占用 GPU 显存

@@ -61,9 +61,19 @@ public final class StorageTrayNode: SKNode {
         fatalError("init(coder:) has not been implemented")
     }
 
+    /// 当前空置的格子编号列表（供一键收拢使用）
+    public func emptySlotIndices() -> [Int] {
+        return (0 ..< Self.slotCount).filter { slotPieces[$0] == nil }
+    }
+
+    /// 世界坐标是否落在托盘底座区域内（含少量外扩余量）
+    public func containsWorldPoint(_ scenePoint: CGPoint) -> Bool {
+        let local = convert(scenePoint, from: parent ?? self)
+        return abs(local.x) <= traySize.width / 2 + 12 && abs(local.y) <= traySize.height / 2 + 12
+    }
+
     /// 检测落点是否在托盘的某一个格子里
-    public func hitSlotIndex(at scenePoint: CGPoint) -> Int? {
-        let trayLocalPoint = convert(scenePoint, from: parent ?? self)
+    public func hitSlotIndex(at scenePoint: CGPoint) -> Int? {        let trayLocalPoint = convert(scenePoint, from: parent ?? self)
         for (i, slot) in slotNodes.enumerated() {
             let slotLocal = slot.convert(trayLocalPoint, from: self)
             let halfW = slotSize.width / 2
