@@ -438,16 +438,22 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         }
 
         if anySnapped {
-            // 整组一同吸附锁定到正确位置并立即持久化存档
+            // 整组先统一设置 isPlaced = true 确保计数准确，再播放吸附入位动画
+            for piece in dragged {
+                piece.isPlaced = true
+                piece.traySlotIndex = nil
+            }
+            let placedCount = pieceNodes.values.filter { $0.isPlaced }.count
+            onProgressUpdate?(placedCount, pieceDatas.count)
+            GameFeedbackEngine.shared.triggerSnap()
+            saveCurrentSession()
+
+            // 播放平滑弹簧入位与结算检测
             for piece in dragged {
                 piece.animateSnap(to: piece.correctBoardPosition) { [weak self] in
                     self?.checkGameCompletion()
                 }
             }
-            GameFeedbackEngine.shared.triggerSnap()
-            let placedCount = pieceNodes.values.filter { $0.isPlaced }.count
-            onProgressUpdate?(placedCount, pieceDatas.count)
-            saveCurrentSession()
         } else {
             // C. 检查未归位碎片之间是否有相邻咬合成组
             checkPieceToPieceMerge(draggedPieces: dragged)
