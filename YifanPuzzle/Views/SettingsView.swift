@@ -85,9 +85,10 @@ public struct SettingsView: View {
                 Button("确定重置", role: .destructive) {
                     ProgressManager.shared.resetAllProgress()
                     SessionSaveManager.shared.clear()
+                    GameSettings.shared.resetToDefaults()
                 }
             } message: {
-                Text("此操作将清空所有已通关星级、历史最佳用时以及中途保存的拼图进度，无法撤回。")
+                Text("此操作将清空所有已通关星级、历史最佳用时以及中途保存的拼图进度，并将游戏设置恢复为默认值，无法撤回。")
             }
         }
     }

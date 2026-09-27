@@ -39,4 +39,13 @@ public final class GameSettings: ObservableObject {
         self.parallax3DEnabled = UserDefaults.standard.object(forKey: "parallax3DEnabled") as? Bool ?? true
         self.splitRatio = UserDefaults.standard.object(forKey: "splitRatio") as? Double ?? 0.75
     }
+
+    public func resetToDefaults() {
+        self.allowFreeRotation = false
+        self.soundEnabled = true
+        self.hapticsEnabled = true
+        self.showGhostOutline = true
+        self.parallax3DEnabled = true
+        self.splitRatio = 0.75
+    }
 }
