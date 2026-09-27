@@ -38,7 +38,7 @@ public struct MainMenuView: View {
                                     .shadow(color: Color.black.opacity(0.45), radius: 8, y: 4)
 
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text("一凡拼图")
+                                    Text("一凡爱拼图")
                                         .font(.system(size: 38, weight: .heavy, design: .serif))
                                         .foregroundColor(MaillardTheme.cream)
                                         .shadow(color: Color.black.opacity(0.45), radius: 5, y: 2)
