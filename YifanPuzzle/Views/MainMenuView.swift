@@ -5,6 +5,7 @@ public struct MainMenuView: View {
     @ObservedObject var settings = GameSettings.shared
     @State private var showingLevelSelect = false
     @State private var showingSettings = false
+    @State private var refreshTrigger = false
 
     public init() {}
 
@@ -57,6 +58,7 @@ public struct MainMenuView: View {
                             BadgeItem(title: "已收录图案", value: "\(PuzzleImageRepository.shared.allItems().count) 张")
                             BadgeItem(title: "挑战等级", value: "5 个梯度")
                             BadgeItem(title: "已通关", value: "\(ProgressManager.shared.completedCount()) 关")
+                                .id(refreshTrigger)
                         }
                     }
                     .padding(.leading, 30)
@@ -112,8 +114,13 @@ public struct MainMenuView: View {
             .navigationDestination(isPresented: $showingLevelSelect) {
                 LevelSelectView()
             }
-            .sheet(isPresented: $showingSettings) {
+            .sheet(isPresented: $showingSettings, onDismiss: {
+                refreshTrigger.toggle()
+            }) {
                 SettingsView()
+            }
+            .onAppear {
+                refreshTrigger.toggle()
             }
         }
     }
