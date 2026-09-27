@@ -233,13 +233,14 @@ public struct GamePlayView: View {
             .padding(.trailing, max(24, proxy.safeAreaInsets.trailing + 12))
             .padding(.top, max(12, proxy.safeAreaInsets.top + 6))
 
-                    // 拼图进度细条
+                    // 拼图进度细条（满格时整条泛起金色光晕）
                     GeometryReader { barProxy in
                         ZStack(alignment: .leading) {
                             Capsule().fill(MaillardTheme.warmGlass)
                             Capsule()
                                 .fill(MaillardTheme.goldGradient)
                                 .frame(width: barProxy.size.width * progressRatio)
+                                .shadow(color: progressRatio >= 1 ? MaillardTheme.gold.opacity(0.85) : Color.clear, radius: progressRatio >= 1 ? 6 : 0)
                                 .animation(.easeInOut(duration: 0.3), value: progressRatio)
                         }
                     }

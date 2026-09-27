@@ -223,8 +223,8 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
     // MARK: - 切割与碎片构建
 
     private func buildAndDistributePieces() {
-        // 使用图片ID的哈希作为一致性随机种子
-        let seed = UInt64(abs(imageItem.id.hashValue))
+        // 使用图片 ID 的稳定哈希作为一致性随机种子（跨启动一致，保证断点续玩碎片形状不变）
+        let seed = PuzzleMeshGenerator.stableSeed(for: imageItem.id)
         self.pieceDatas = PuzzleMeshGenerator.generateGrid(columns: level.gridColumns, rows: level.gridRows, seed: seed)
 
         // 异步渲染高质量碎片 3D 贴图

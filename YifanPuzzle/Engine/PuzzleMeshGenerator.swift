@@ -72,6 +72,15 @@ public struct SeededRandom {
 /// 网格切割生成器
 public final class PuzzleMeshGenerator {
 
+    /// 由图片 ID 生成跨启动稳定的切割种子（String.hashValue 每次启动随机化，不可用于持久一致性）
+    public static func stableSeed(for id: String) -> UInt64 {
+        var hash: UInt64 = 5381
+        for scalar in id.unicodeScalars {
+            hash = (hash &<< 5) &+ hash &+ UInt64(scalar.value)
+        }
+        return hash
+    }
+
     /// 基于列数、行数和随机种子，生成整套碎片的边缘互锁结构
     public static func generateGrid(columns: Int, rows: Int, seed: UInt64) -> [PuzzlePieceData] {
         var rng = SeededRandom(seed: seed)

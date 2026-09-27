@@ -102,4 +102,29 @@ final class PuzzleCoreLogicTests: XCTestCase {
         pm.resetAllProgress()
         XCTAssertEqual(pm.completedCount(), 0)
     }
+
+    func testStableSeedConsistency() {
+        // 回归保护：切割种子必须跨调用/跨启动稳定（String.hashValue 是随机化的，曾被误用）
+        let a1 = PuzzleMeshGenerator.stableSeed(for: "puzzle_01")
+        let a2 = PuzzleMeshGenerator.stableSeed(for: "puzzle_01")
+        XCTAssertEqual(a1, a2, "同一图片 ID 的种子必须稳定")
+
+        let b = PuzzleMeshGenerator.stableSeed(for: "puzzle_02")
+        XCTAssertNotEqual(a1, b, "不同图片 ID 的种子应当不同")
+
+        // 种子一致 ⇒ 切割互锁结构完全一致
+        let m1 = PuzzleMeshGenerator.generateGrid(columns: 7, rows: 5, seed: a1)
+        let m2 = PuzzleMeshGenerator.generateGrid(columns: 7, rows: 5, seed: PuzzleMeshGenerator.stableSeed(for: "puzzle_01"))
+        XCTAssertEqual(m1.count, m2.count)
+        for i in 0 ..< m1.count {
+            XCTAssertEqual(m1[i].edges, m2[i].edges)
+        }
+    }
+
+    func testPerformance700PieceGridGeneration() {
+        // 性能基线：700 块（35×20）网格生成应保持在毫秒级
+        measure {
+            _ = PuzzleMeshGenerator.generateGrid(columns: 35, rows: 20, seed: 424242)
+        }
+    }
 }
