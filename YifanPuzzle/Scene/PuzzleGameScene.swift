@@ -573,7 +573,13 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
             ProgressManager.shared.markCompleted(imageId: imageItem.id, levelId: level.id, elapsedSeconds: elapsed)
             GameFeedbackEngine.shared.triggerVictory()
             celebrateCompletion()
-            onGameCompleted?(elapsed)
+            // 彩带先飘 0.9 秒让玩家看清满屏庆祝，再淡入结算弹窗（弱引用防止场景销毁后回调）
+            run(SKAction.sequence([
+                SKAction.wait(forDuration: 0.9),
+                SKAction.run { [weak self] in
+                    self?.onGameCompleted?(elapsed)
+                }
+            ]))
         } else {
             saveCurrentSession()
         }

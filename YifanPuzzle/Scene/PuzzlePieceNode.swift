@@ -49,39 +49,52 @@ public final class PuzzlePieceNode: SKNode {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// 拿起动画：3D 立体抬升、放大 1.08 倍、阴影拉开并模糊加深
+    /// 拿起动画：3D 立体抬升、放大带轻微过冲回弹、阴影拉开并模糊加深
     public func animatePickup() {
         guard !isPlaced else { return }
         removeAction(forKey: "drop")
 
-        let liftAction = SKAction.group([
-            SKAction.scale(to: 1.08, duration: 0.12),
-            SKAction.run {
-                self.shadowSprite.run(SKAction.group([
-                    SKAction.move(to: CGPoint(x: 8.0, y: -10.0), duration: 0.12),
-                    SKAction.fadeAlpha(to: 0.75, duration: 0.12)
-                ]))
-            }
+        // 过冲回弹：先放大到 1.11 再回落到 1.06，手感更 Q 弹
+        let overshoot = SKAction.scale(to: 1.11, duration: 0.09)
+        overshoot.timingMode = .easeOut
+        let settle = SKAction.scale(to: 1.06, duration: 0.09)
+        settle.timingMode = .easeInOut
+
+        let liftAction = SKAction.sequence([
+            SKAction.group([
+                SKAction.sequence([overshoot, settle]),
+                SKAction.run {
+                    self.shadowSprite.run(SKAction.group([
+                        SKAction.move(to: CGPoint(x: 8.0, y: -10.0), duration: 0.14),
+                        SKAction.fadeAlpha(to: 0.75, duration: 0.14)
+                    ]))
+                }
+            ])
         ])
-        liftAction.timingMode = .easeOut
         run(liftAction, withKey: "pickup")
     }
 
-    /// 放下动画：恢复原始大小、阴影贴回
+    /// 放下动画：先轻微压缩再回弹，模拟碎片落到桌面的沉降缓冲
     public func animateDrop() {
         guard !isPlaced else { return }
         removeAction(forKey: "pickup")
 
-        let dropAction = SKAction.group([
-            SKAction.scale(to: 1.0, duration: 0.15),
-            SKAction.run {
-                self.shadowSprite.run(SKAction.group([
-                    SKAction.move(to: .zero, duration: 0.15),
-                    SKAction.fadeAlpha(to: 0.55, duration: 0.15)
-                ]))
-            }
+        let compress = SKAction.scale(to: 0.965, duration: 0.08)
+        compress.timingMode = .easeOut
+        let restore = SKAction.scale(to: 1.0, duration: 0.11)
+        restore.timingMode = .easeInOut
+
+        let dropAction = SKAction.sequence([
+            SKAction.group([
+                SKAction.sequence([compress, restore]),
+                SKAction.run {
+                    self.shadowSprite.run(SKAction.group([
+                        SKAction.move(to: .zero, duration: 0.16),
+                        SKAction.fadeAlpha(to: 0.55, duration: 0.16)
+                    ]))
+                }
+            ])
         ])
-        dropAction.timingMode = .easeOut
         run(dropAction, withKey: "drop")
     }
 

@@ -30,7 +30,7 @@ public struct VictoryCelebrationView: View {
 
     public var body: some View {
         ZStack {
-            Color.black.opacity(0.85).ignoresSafeArea()
+            Color.black.opacity(0.72).ignoresSafeArea()
 
             VStack(spacing: 16) {
                 // 奖杯与成就勋章
