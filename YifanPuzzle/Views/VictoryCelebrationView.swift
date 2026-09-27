@@ -8,6 +8,9 @@ public struct VictoryCelebrationView: View {
     public let onReplay: () -> Void
     public let onBack: () -> Void
 
+    @State private var appearScale: CGFloat = 0.8
+    @State private var appearOpacity: Double = 0.0
+
     public init(imageItem: PuzzleImageItem, level: PuzzleLevel, elapsedTime: TimeInterval, onReplay: @escaping () -> Void, onBack: @escaping () -> Void) {
         self.imageItem = imageItem
         self.level = level
@@ -102,6 +105,14 @@ public struct VictoryCelebrationView: View {
                     .stroke(Color.white.opacity(0.2), lineWidth: 1.5)
             )
             .shadow(radius: 30)
+            .scaleEffect(appearScale)
+            .opacity(appearOpacity)
+            .onAppear {
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) {
+                    appearScale = 1.0
+                    appearOpacity = 1.0
+                }
+            }
         }
     }
 
