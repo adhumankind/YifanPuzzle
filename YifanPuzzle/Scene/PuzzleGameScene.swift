@@ -470,12 +470,25 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
                 )
 
                 if snap {
-                    // 合并成同一组，并持久化到对局存档
-                    let targetGroupId = dragged.groupId
+                    // 合并成同一组，计算理论相对网格偏移以矫正位置对齐
+                    let colDiff = other.pieceData.col - dragged.pieceData.col
+                    let rowDiff = other.pieceData.row - dragged.pieceData.row
+                    let targetX = dragged.position.x + CGFloat(colDiff) * pieceSize.width
+                    let targetY = dragged.position.y - CGFloat(rowDiff) * pieceSize.height
                     let oldGroupId = other.groupId
+                    let targetGroupId = dragged.groupId
+                    let offsetX = targetX - other.position.x
+                    let offsetY = targetY - other.position.y
+
+                    // 对被咬合的整个碎片子群执行对齐微移和平滑归正角度
                     for p in pieceNodes.values where p.groupId == oldGroupId {
                         p.groupId = targetGroupId
+                        p.position = CGPoint(x: p.position.x + offsetX, y: p.position.y + offsetY)
+                        if allowRotation {
+                            p.zRotation = dragged.zRotation
+                        }
                     }
+
                     GameFeedbackEngine.shared.triggerSnap()
                     saveCurrentSession()
                     break
