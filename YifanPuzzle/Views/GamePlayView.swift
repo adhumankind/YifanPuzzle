@@ -17,6 +17,7 @@ public struct GamePlayView: View {
     @State private var showingSettings = false
     @State private var isLoadingPieces = true
     @State private var finalElapsed: TimeInterval = 0
+    @State private var isUnderlayOn: Bool = GameSettings.shared.showGhostOutline
 
     // 内部持有的 SpriteKit 游戏场景
     @State private var scene: PuzzleGameScene? = nil
@@ -104,6 +105,35 @@ public struct GamePlayView: View {
                             )
                         }
 
+                        // 参考底图快捷开关（极淡单色半透明，随时对照）
+                        Button {
+                            isUnderlayOn.toggle()
+                            GameSettings.shared.showGhostOutline = isUnderlayOn
+                            scene?.applyGhostOutlineSettingChanged(showGhost: isUnderlayOn)
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: isUnderlayOn ? "ruler.fill" : "ruler")
+                                Text("底图")
+                            }
+                            .font(.system(size: 12, weight: .bold, design: .serif))
+                            .foregroundColor(isUnderlayOn ? MaillardTheme.deep : MaillardTheme.cream)
+                            .frame(width: 78, height: 34)
+                            .background(
+                                Group {
+                                    if isUnderlayOn {
+                                        Rectangle().fill(MaillardTheme.goldGradient)
+                                    } else {
+                                        Rectangle().fill(MaillardTheme.warmGlass)
+                                    }
+                                }
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(isUnderlayOn ? Color.white.opacity(0.25) : MaillardTheme.warmStroke, lineWidth: 0.8)
+                            )
+                            .cornerRadius(12)
+                        }
+
                         // 局中快速设置按钮（随时切换自由角度/音效）
                         Button {
                             showingSettings = true
@@ -123,6 +153,26 @@ public struct GamePlayView: View {
 
                     Spacer()
                 }
+
+                // 底部左侧：无限辅助道具（不限次数，专注拼图乐趣不设阻碍）
+                HStack(spacing: 18) {
+                    Button {
+                        GameFeedbackEngine.shared.triggerPickup()
+                        scene?.giveHint()
+                    } label: {
+                        propIcon("sprite_magnifier")
+                    }
+
+                    Button {
+                        GameFeedbackEngine.shared.triggerPickup()
+                        scene?.autoPlaceOnePiece()
+                    } label: {
+                        propIcon("sprite_wand")
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                .padding(.leading, max(18, proxy.safeAreaInsets.leading + 10))
+                .padding(.bottom, max(14, proxy.safeAreaInsets.bottom + 8))
 
                 // 原图高清浮层弹窗
                 if showingPreview {
@@ -326,5 +376,22 @@ public struct GamePlayView: View {
         let m = Int(sec) / 60
         let s = Int(sec) % 60
         return String(format: "%02d:%02d", m, s)
+    }
+
+    /// 无限辅助道具按钮外观（金色立体图标 + ∞ 次数角标）
+    private func propIcon(_ name: String) -> some View {
+        Image(name)
+            .resizable()
+            .scaledToFit()
+            .frame(height: 40)
+            .shadow(color: Color.black.opacity(0.40), radius: 5, y: 2)
+            .overlay(alignment: .topTrailing) {
+                Text("∞")
+                    .font(.system(size: 11, weight: .black, design: .rounded))
+                    .foregroundColor(MaillardTheme.cream)
+                    .padding(3)
+                    .background(Circle().fill(MaillardTheme.caramel))
+                    .offset(x: 9, y: -7)
+            }
     }
 }

@@ -1,3 +1,4 @@
+import CoreImage
 import SpriteKit
 import UIKit
 
@@ -150,11 +151,11 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         boardBackgroundNode.zPosition = 1
         addChild(boardBackgroundNode)
 
-        // 幽灵原图（按设置可开启作为微弱半透明底图参考）
-        ghostImageNode = SKSpriteNode(texture: SKTexture(image: sourceImage), size: boardRect.size)
+        // 幽灵参考底图：极淡的单色（去饱和）原图，按设置可开关，方便玩家对照拼图乐趣
+        ghostImageNode = SKSpriteNode(texture: SKTexture(image: makeMonoGhostImage(sourceImage)), size: boardRect.size)
         ghostImageNode.position = CGPoint(x: boardRect.midX, y: boardRect.midY)
         ghostImageNode.zPosition = 2
-        ghostImageNode.alpha = GameSettings.shared.showGhostOutline ? 0.20 : 0.0
+        ghostImageNode.alpha = GameSettings.shared.showGhostOutline ? 0.14 : 0.0
         addChild(ghostImageNode)
 
         // 拼图边缘外框线
@@ -306,7 +307,17 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
     }
 
     public func applyGhostOutlineSettingChanged(showGhost: Bool) {
-        ghostImageNode?.run(SKAction.fadeAlpha(to: showGhost ? 0.20 : 0.0, duration: 0.2))
+        ghostImageNode?.run(SKAction.fadeAlpha(to: showGhost ? 0.14 : 0.0, duration: 0.2))
+    }
+
+    /// 将原图转为单色（去饱和）版本，用作极淡的半透明参考底图
+    private func makeMonoGhostImage(_ image: UIImage) -> UIImage {
+        guard let ciImage = CIImage(image: image),
+              let filter = CIFilter(name: "CIPhotoEffectMono") else { return image }
+        filter.setValue(ciImage, forKey: kCIInputImageKey)
+        guard let output = filter.outputImage,
+              let cgImage = CIContext(options: nil).createCGImage(output, from: output.extent) else { return image }
+        return UIImage(cgImage: cgImage)
     }
 
     public func applyParallaxSettingChanged(enabled: Bool) {
@@ -561,9 +572,183 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
             let elapsed = Date().timeIntervalSince(startTime)
             ProgressManager.shared.markCompleted(imageId: imageItem.id, levelId: level.id, elapsedSeconds: elapsed)
             GameFeedbackEngine.shared.triggerVictory()
+            celebrateCompletion()
             onGameCompleted?(elapsed)
         } else {
             saveCurrentSession()
+        }
+    }
+
+    // MARK: - 无限辅助道具（让玩家专注体验拼图乐趣，不设阻碍）
+
+    /// 为辅助道具挑选一块候选碎片（优先散落区，其次托盘；排除正在拖拽与正在施法的）
+    private func selectAssistCandidate() -> PuzzlePieceNode? {
+        let candidates = pieceNodes.values.filter {
+            !$0.isPlaced && !activeDraggedPieces.contains($0) && $0.action(forKey: "magic_place") == nil
+        }
+        guard !candidates.isEmpty else { return nil }
+        let pilePieces = candidates.filter { $0.traySlotIndex == nil }
+        let pool = pilePieces.isEmpty ? candidates : pilePieces
+        return pool.randomElement()
+    }
+
+    /// 「找一找」道具：为一块未归位碎片给出提示（本体金色光环 + 正确板位高亮闪烁）
+    public func giveHint() {
+        guard let piece = selectAssistCandidate() else { return }
+        GameFeedbackEngine.shared.triggerPickup()
+
+        // 本体金色光环脉冲（扩散两轮）
+        let radius = max(piece.surfaceSprite.size.width, piece.surfaceSprite.size.height) * 0.62
+        let ring = SKShapeNode(circleOfRadius: radius)
+        ring.strokeColor = MaillardTheme.ui.slotPulse
+        ring.fillColor = .clear
+        ring.lineWidth = 3
+        ring.glowWidth = 4
+        ring.position = piece.position
+        ring.zPosition = 90
+        ring.alpha = 0.9
+        addChild(ring)
+
+        let ringWave: SKAction = {
+            let expand = SKAction.group([
+                SKAction.scale(to: 1.4, duration: 0.5),
+                SKAction.fadeAlpha(to: 0.0, duration: 0.5)
+            ])
+            expand.timingMode = .easeOut
+            let reset = SKAction.run { ring.setScale(1.0); ring.alpha = 0.9 }
+            return SKAction.sequence([expand, reset, SKAction.wait(forDuration: 0.1), expand, SKAction.removeFromParent()])
+        }()
+        ring.run(ringWave)
+
+        // 正确板位闪烁高亮（双闪后优雅消散）
+        let w = boardRect.width * piece.pieceData.normalizedSize.width
+        let h = boardRect.height * piece.pieceData.normalizedSize.height
+        let target = SKShapeNode(rect: CGRect(x: -w / 2, y: -h / 2, width: w, height: h), cornerRadius: 6)
+        target.strokeColor = MaillardTheme.ui.ghostOutline
+        target.fillColor = SKColor(red: 1.0, green: 0.78, blue: 0.40, alpha: 0.10)
+        target.lineWidth = 2.5
+        target.glowWidth = 3
+        target.position = piece.correctBoardPosition
+        target.zPosition = 20
+        addChild(target)
+
+        let flash = SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.25, duration: 0.3),
+            SKAction.fadeAlpha(to: 1.0, duration: 0.3),
+            SKAction.fadeAlpha(to: 0.25, duration: 0.3),
+            SKAction.fadeAlpha(to: 1.0, duration: 0.3),
+            SKAction.wait(forDuration: 0.5),
+            SKAction.fadeOut(withDuration: 0.45),
+            SKAction.removeFromParent()
+        ])
+        target.run(flash)
+        spawnSparkles(at: piece.correctBoardPosition, count: 6)
+    }
+
+    /// 「拼一块」道具：将一块未归位碎片魔法般地自动送回正确板位（无限次）
+    public func autoPlaceOnePiece() {
+        guard let piece = selectAssistCandidate() else { return }
+
+        // 若碎片正在托盘中，先释放格子
+        if let slot = piece.traySlotIndex {
+            trayNode.removePiece(fromSlot: slot)
+        }
+        piece.traySlotIndex = nil
+        highestZIndex += 10
+        piece.zPosition = highestZIndex
+
+        // 与磁吸流程一致：先预置状态保证计数与存档竞态安全
+        piece.isPlaced = true
+        let placedCount = pieceNodes.values.filter { $0.isPlaced }.count
+        onProgressUpdate?(placedCount, pieceDatas.count)
+        GameFeedbackEngine.shared.triggerPickup()
+        saveCurrentSession()
+
+        spawnSparkles(at: piece.position, count: 12)
+
+        // 魔法蓄力 → 平滑飞行归位 → 星光绽放
+        let lift = SKAction.scale(to: 1.16, duration: 0.16)
+        lift.timingMode = .easeOut
+        let cast = SKAction.run { [weak self, weak piece] in
+            guard let self = self, let piece = piece else { return }
+            piece.animateSnap(to: piece.correctBoardPosition) { [weak self] in
+                guard let self = self else { return }
+                self.spawnSparkles(at: piece.correctBoardPosition, count: 8)
+                GameFeedbackEngine.shared.triggerSnap()
+                self.checkGameCompletion()
+            }
+        }
+        piece.run(SKAction.sequence([lift, SKAction.wait(forDuration: 0.05), cast]), withKey: "magic_place")
+    }
+
+    /// 星光粒子绽放（辅助道具与归位时刻的通用点缀）
+    private func spawnSparkles(at point: CGPoint, count: Int) {
+        for i in 0..<count {
+            let dotSize = CGFloat.random(in: 4...8)
+            let dot = SKShapeNode(circleOfRadius: dotSize / 2)
+            dot.fillColor = SKColor(
+                red: 1.0,
+                green: CGFloat.random(in: 0.70...0.92),
+                blue: CGFloat.random(in: 0.28...0.45),
+                alpha: 1.0
+            )
+            dot.strokeColor = .clear
+            dot.position = point
+            dot.zPosition = 95
+            addChild(dot)
+
+            let angle = (CGFloat(i) / CGFloat(count)) * 2 * .pi + .random(in: -0.3...0.3)
+            let distance = CGFloat.random(in: 26...64)
+            let drift = SKAction.move(
+                by: CGVector(dx: cos(angle) * distance, dy: sin(angle) * distance),
+                duration: 0.55
+            )
+            drift.timingMode = .easeOut
+            dot.run(SKAction.sequence([
+                SKAction.group([drift, SKAction.fadeOut(withDuration: 0.55), SKAction.scale(to: 0.3, duration: 0.55)]),
+                SKAction.removeFromParent()
+            ]))
+        }
+    }
+
+    /// 通关庆祝：全屏飘落的美拉德金色彩带
+    public func celebrateCompletion() {
+        guard size.width > 0 && size.height > 0 else { return }
+        let palette: [SKColor] = [
+            SKColor(red: 0.906, green: 0.698, blue: 0.400, alpha: 1.0),
+            SKColor(red: 0.776, green: 0.545, blue: 0.349, alpha: 1.0),
+            SKColor(red: 0.961, green: 0.914, blue: 0.851, alpha: 1.0),
+            SKColor(red: 0.878, green: 0.643, blue: 0.345, alpha: 1.0)
+        ]
+
+        for i in 0..<56 {
+            let w = CGFloat.random(in: 6...11)
+            let h = w * CGFloat.random(in: 1.4...2.2)
+            let ribbon = SKShapeNode(rectOf: CGSize(width: w, height: h), cornerRadius: 2)
+            ribbon.fillColor = palette[i % palette.count]
+            ribbon.strokeColor = .clear
+            ribbon.position = CGPoint(x: CGFloat.random(in: 0...size.width), y: size.height + 30)
+            ribbon.zPosition = 120
+            ribbon.setScale(CGFloat.random(in: 0.7...1.4))
+            addChild(ribbon)
+
+            let fall = SKAction.moveTo(y: -40, duration: TimeInterval.random(in: 2.2...4.0))
+            fall.timingMode = .easeIn
+            let swayX = CGFloat.random(in: 26...80) * (Bool.random() ? 1 : -1)
+            let sway = SKAction.repeat(
+                SKAction.sequence([
+                    SKAction.moveBy(x: swayX, y: 0, duration: 0.5),
+                    SKAction.moveBy(x: -swayX, y: 0, duration: 0.5)
+                ]),
+                count: 6
+            )
+            let spin = SKAction.repeat(
+                SKAction.rotate(byAngle: .random(in: 2...6) * (Bool.random() ? 1 : -1), duration: 0.6),
+                count: 6
+            )
+            ribbon.run(sway)
+            ribbon.run(spin)
+            ribbon.run(SKAction.sequence([fall, SKAction.removeFromParent()]))
         }
     }
 
