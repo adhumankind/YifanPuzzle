@@ -31,273 +31,309 @@ public struct GamePlayView: View {
 
     public var body: some View {
         GeometryReader { proxy in
-            ZStack {
-                Color.black.ignoresSafeArea()
-
-                // SpriteKit 游戏场景
-                if let scene = scene {
-                    PuzzleGameViewRepresentable(scene: scene)
-                        .ignoresSafeArea()
+            gameContent(proxy: proxy)
+                .onAppear {
+                    setupScene(size: proxy.size)
                 }
-
-                // 顶部悬浮控制栏 HUD
-                VStack {
-                    HStack(spacing: 16) {
-                        Button {
-                            dismiss()
-                        } label: {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(MaillardTheme.cream)
-                                .frame(width: 40, height: 40)
-                                .background(MaillardTheme.warmGlass)
-                                .overlay(Circle().stroke(MaillardTheme.warmStroke, lineWidth: 0.8))
-                                .clipShape(Circle())
-                        }
-
-                        // 关卡信息与进度
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(currentImageItem.title)
-                                .font(.system(size: 15, weight: .bold, design: .serif))
-                                .foregroundColor(MaillardTheme.cream)
-                            Text("第\(currentLevel.id)级 · 进度: \(placedCount)/\(totalCount > 0 ? totalCount : currentLevel.pieceCount)")
-                                .font(.system(size: 11))
-                                .foregroundColor(MaillardTheme.muted)
-                        }
-
-                        Spacer()
-
-                        // 计时器显示
-                        HStack(spacing: 6) {
-                            Image(systemName: "stopwatch.fill")
-                                .foregroundColor(MaillardTheme.gold)
-                            Text(formatTime(elapsedTime))
-                                .font(.system(size: 15, weight: .bold, design: .monospaced))
-                                .foregroundColor(MaillardTheme.cream)
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(MaillardTheme.warmGlass)
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(MaillardTheme.warmStroke, lineWidth: 0.8)
-                        )
-
-                        // 原图预览按钮
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                showingPreview.toggle()
-                            }
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "eye.fill")
-                                Text("看原图")
-                            }
-                            .font(.system(size: 12, weight: .bold, design: .serif))
-                            .foregroundColor(MaillardTheme.deep)
-                            .frame(width: 94, height: 34)
-                            .background(
-                                Image("sprite_btn_gold")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .shadow(color: Color.black.opacity(0.30), radius: 5, y: 2)
-                            )
-                        }
-
-                        // 参考底图快捷开关（极淡单色半透明，随时对照）
-                        Button {
-                            isUnderlayOn.toggle()
-                            GameSettings.shared.showGhostOutline = isUnderlayOn
-                            scene?.applyGhostOutlineSettingChanged(showGhost: isUnderlayOn)
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: isUnderlayOn ? "ruler.fill" : "ruler")
-                                Text("底图")
-                            }
-                            .font(.system(size: 12, weight: .bold, design: .serif))
-                            .foregroundColor(isUnderlayOn ? MaillardTheme.deep : MaillardTheme.cream)
-                            .frame(width: 78, height: 34)
-                            .background(
-                                Group {
-                                    if isUnderlayOn {
-                                        Rectangle().fill(MaillardTheme.goldGradient)
-                                    } else {
-                                        Rectangle().fill(MaillardTheme.warmGlass)
-                                    }
-                                }
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(isUnderlayOn ? Color.white.opacity(0.25) : MaillardTheme.warmStroke, lineWidth: 0.8)
-                            )
-                            .cornerRadius(12)
-                        }
-
-                        // 局中快速设置按钮（随时切换自由角度/音效）
-                        Button {
-                            showingSettings = true
-                        } label: {
-                            Image(systemName: "gearshape.fill")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(MaillardTheme.cream)
-                                .frame(width: 36, height: 36)
-                                .background(MaillardTheme.warmGlass)
-                                .overlay(Circle().stroke(MaillardTheme.warmStroke, lineWidth: 0.8))
-                                .clipShape(Circle())
-                        }
-                    }
-                    .padding(.leading, max(24, proxy.safeAreaInsets.leading + 12))
-                    .padding(.trailing, max(24, proxy.safeAreaInsets.trailing + 12))
-                    .padding(.top, max(12, proxy.safeAreaInsets.top + 6))
-
-                    Spacer()
-                }
-
-                // 底部左侧：无限辅助道具（不限次数，专注拼图乐趣不设阻碍）
-                HStack(spacing: 18) {
-                    Button {
-                        scene?.giveHint()
-                    } label: {
-                        propIcon("sprite_magnifier")
-                    }
-
-                    Button {
-                        scene?.autoPlaceOnePiece()
-                    } label: {
-                        propIcon("sprite_wand")
+                .onReceive(timer) { _ in
+                    if timerActive && !showingVictory {
+                        elapsedTime += 1
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-                .padding(.leading, max(18, proxy.safeAreaInsets.leading + 10))
-                .padding(.bottom, max(14, proxy.safeAreaInsets.bottom + 8))
-
-                // 原图高清浮层弹窗
-                if showingPreview {
-                    ZStack {
-                        Color.black.opacity(0.8).ignoresSafeArea()
-                            .onTapGesture {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    showingPreview = false
-                                }
-                            }
-
-                        VStack(spacing: 12) {
-                            if let uiImg = PuzzleImageRepository.shared.loadImage(for: currentImageItem) {
-                                Image(uiImage: uiImg)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(maxWidth: proxy.size.width * 0.75, maxHeight: proxy.size.height * 0.75)
-                                    .cornerRadius(12)
-                                    .shadow(radius: 20)
-                            }
-                            Button("关闭原图") {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    showingPreview = false
-                                }
-                            }
-                            .font(.system(size: 14, weight: .bold, design: .serif))
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 8)
-                            .background(MaillardTheme.warmGlass)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(MaillardTheme.warmStroke, lineWidth: 0.8)
-                            )
-                            .foregroundColor(MaillardTheme.cream)
-                            .cornerRadius(10)
+                .sheet(isPresented: $showingSettings, onDismiss: {
+                    timerActive = true
+                }) {
+                    SettingsView()
+                        .onAppear {
+                            timerActive = false
                         }
-                    }
-                    .transition(.opacity)
                 }
-
-                // 胜利结算浮层
-                if showingVictory {
-                    VictoryCelebrationView(
-                        imageItem: currentImageItem,
-                        level: currentLevel,
-                        elapsedTime: finalElapsed,
-                        newAchievements: scene?.newlyEarnedAchievements ?? [],
-                        onNext: nextAvailablePuzzleParams().map { nextItem, nextLvl in
-                            {
-                                switchToNextPuzzle(item: nextItem, level: nextLvl, size: proxy.size)
-                            }
-                        },
-                        onReplay: {
-                            showingVictory = false
-                            setupScene(size: proxy.size)
-                        },
-                        onBack: {
-                            dismiss()
+                .onChange(of: GameSettings.shared.allowFreeRotation) { allow in
+                    scene?.applyRotationSettingChanged(allowFree: allow)
+                }
+                .onChange(of: GameSettings.shared.showGhostOutline) { show in
+                    isUnderlayOn = show
+                    scene?.applyGhostOutlineSettingChanged(showGhost: show)
+                }
+                .onChange(of: GameSettings.shared.parallax3DEnabled) { enabled in
+                    scene?.applyParallaxSettingChanged(enabled: enabled)
+                }
+                .onChange(of: scenePhase) { phase in
+                    switch phase {
+                    case .active:
+                        if !showingSettings && !showingVictory {
+                            timerActive = true
                         }
-                    )
-                }
-
-                // 首次加载/高阶大关卡切片渲染遮罩过渡动画
-                if isLoadingPieces {
-                    ZStack {
-                        MaillardTheme.deep.ignoresSafeArea()
-
-                        VStack(spacing: 16) {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: MaillardTheme.gold))
-                                .scaleEffect(1.6)
-
-                            VStack(spacing: 6) {
-                                Text("正在为您精心雕琢 \(currentLevel.pieceCount) 块 3D 拼图...")
-                                    .font(.system(size: 16, weight: .bold, design: .serif))
-                                    .foregroundColor(MaillardTheme.cream)
-
-                                Text("程序化贝塞尔锯齿切片 & 浮雕光影贴图合成中")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(MaillardTheme.muted)
-                            }
-                        }
-                    }
-                    .transition(.opacity)
-                }
-            }
-            .onAppear {
-                setupScene(size: proxy.size)
-            }
-            .onReceive(timer) { _ in
-                if timerActive && !showingVictory {
-                    elapsedTime += 1
-                }
-            }
-            .sheet(isPresented: $showingSettings, onDismiss: {
-                timerActive = true
-            }) {
-                SettingsView()
-                    .onAppear {
+                    case .inactive, .background:
                         timerActive = false
+                        scene?.cancelActiveDragging()
+                    @unknown default:
+                        break
                     }
-            }
-            .onChange(of: GameSettings.shared.allowFreeRotation) { allow in
-                scene?.applyRotationSettingChanged(allowFree: allow)
-            }
-            .onChange(of: GameSettings.shared.showGhostOutline) { show in
-                isUnderlayOn = show
-                scene?.applyGhostOutlineSettingChanged(showGhost: show)
-            }
-            .onChange(of: GameSettings.shared.parallax3DEnabled) { enabled in
-                scene?.applyParallaxSettingChanged(enabled: enabled)
-            }
-            .onChange(of: scenePhase) { phase in
-                switch phase {
-                case .active:
-                    if !showingSettings && !showingVictory {
-                        timerActive = true
-                    }
-                case .inactive, .background:
-                    timerActive = false
-                    scene?.cancelActiveDragging()
-                @unknown default:
-                    break
                 }
+        }
+    }
+
+    // MARK: - 主内容（拆分子视图，降低 SwiftUI 类型检查复杂度）
+
+    @ViewBuilder
+    private func gameContent(proxy: GeometryProxy) -> some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            // SpriteKit 游戏场景
+            if let scene = scene {
+                PuzzleGameViewRepresentable(scene: scene)
+                    .ignoresSafeArea()
+            }
+
+            topHUD(proxy: proxy)
+            propToolbar(proxy: proxy)
+
+            // 原图高清浮层弹窗
+            if showingPreview {
+                previewOverlay(proxy: proxy)
+            }
+
+            // 胜利结算浮层
+            if showingVictory {
+                victoryOverlay(proxy: proxy)
+            }
+
+            // 首次加载/高阶大关卡切片渲染遮罩过渡动画
+            if isLoadingPieces {
+                loadingOverlay
             }
         }
     }
+
+    // MARK: - 顶部悬浮控制栏 HUD
+
+    private func topHUD(proxy: GeometryProxy) -> some View {
+        VStack {
+            HStack(spacing: 16) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(MaillardTheme.cream)
+                        .frame(width: 40, height: 40)
+                        .background(MaillardTheme.warmGlass)
+                        .overlay(Circle().stroke(MaillardTheme.warmStroke, lineWidth: 0.8))
+                        .clipShape(Circle())
+                }
+
+                // 关卡信息与进度
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(currentImageItem.title)
+                        .font(.system(size: 15, weight: .bold, design: .serif))
+                        .foregroundColor(MaillardTheme.cream)
+                    Text("第\(currentLevel.id)级 · 进度: \(placedCount)/\(totalCount > 0 ? totalCount : currentLevel.pieceCount)")
+                        .font(.system(size: 11))
+                        .foregroundColor(MaillardTheme.muted)
+                }
+
+                Spacer()
+
+                // 计时器显示
+                HStack(spacing: 6) {
+                    Image(systemName: "stopwatch.fill")
+                        .foregroundColor(MaillardTheme.gold)
+                    Text(formatTime(elapsedTime))
+                        .font(.system(size: 15, weight: .bold, design: .monospaced))
+                        .foregroundColor(MaillardTheme.cream)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(MaillardTheme.warmGlass)
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(MaillardTheme.warmStroke, lineWidth: 0.8)
+                )
+
+                // 原图预览按钮
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showingPreview.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "eye.fill")
+                        Text("看原图")
+                    }
+                    .font(.system(size: 12, weight: .bold, design: .serif))
+                    .foregroundColor(MaillardTheme.deep)
+                    .frame(width: 94, height: 34)
+                    .background(
+                        Image("sprite_btn_gold")
+                            .resizable()
+                            .scaledToFit()
+                            .shadow(color: Color.black.opacity(0.30), radius: 5, y: 2)
+                    )
+                }
+
+                // 参考底图快捷开关（极淡单色半透明，随时对照）
+                Button {
+                    isUnderlayOn.toggle()
+                    GameSettings.shared.showGhostOutline = isUnderlayOn
+                    scene?.applyGhostOutlineSettingChanged(showGhost: isUnderlayOn)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: isUnderlayOn ? "ruler.fill" : "ruler")
+                        Text("底图")
+                    }
+                    .font(.system(size: 12, weight: .bold, design: .serif))
+                    .foregroundColor(isUnderlayOn ? MaillardTheme.deep : MaillardTheme.cream)
+                    .frame(width: 78, height: 34)
+                    .background(
+                        Group {
+                            if isUnderlayOn {
+                                Rectangle().fill(MaillardTheme.goldGradient)
+                            } else {
+                                Rectangle().fill(MaillardTheme.warmGlass)
+                            }
+                        }
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(isUnderlayOn ? Color.white.opacity(0.25) : MaillardTheme.warmStroke, lineWidth: 0.8)
+                    )
+                    .cornerRadius(12)
+                }
+
+                // 局中快速设置按钮（随时切换自由角度/音效）
+                Button {
+                    showingSettings = true
+                } label: {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(MaillardTheme.cream)
+                        .frame(width: 36, height: 36)
+                        .background(MaillardTheme.warmGlass)
+                        .overlay(Circle().stroke(MaillardTheme.warmStroke, lineWidth: 0.8))
+                        .clipShape(Circle())
+                }
+            }
+            .padding(.leading, max(24, proxy.safeAreaInsets.leading + 12))
+            .padding(.trailing, max(24, proxy.safeAreaInsets.trailing + 12))
+            .padding(.top, max(12, proxy.safeAreaInsets.top + 6))
+
+            Spacer()
+        }
+    }
+
+    // MARK: - 底部左侧无限辅助道具
+
+    private func propToolbar(proxy: GeometryProxy) -> some View {
+        HStack(spacing: 18) {
+            Button {
+                scene?.giveHint()
+            } label: {
+                propIcon("sprite_magnifier")
+            }
+
+            Button {
+                scene?.autoPlaceOnePiece()
+            } label: {
+                propIcon("sprite_wand")
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+        .padding(.leading, max(18, proxy.safeAreaInsets.leading + 10))
+        .padding(.bottom, max(14, proxy.safeAreaInsets.bottom + 8))
+    }
+
+    // MARK: - 原图高清浮层弹窗
+
+    private func previewOverlay(proxy: GeometryProxy) -> some View {
+        ZStack {
+            Color.black.opacity(0.8).ignoresSafeArea()
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showingPreview = false
+                    }
+                }
+
+            VStack(spacing: 12) {
+                if let uiImg = PuzzleImageRepository.shared.loadImage(for: currentImageItem) {
+                    Image(uiImage: uiImg)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: proxy.size.width * 0.75, maxHeight: proxy.size.height * 0.75)
+                        .cornerRadius(12)
+                        .shadow(radius: 20)
+                }
+                Button("关闭原图") {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showingPreview = false
+                    }
+                }
+                .font(.system(size: 14, weight: .bold, design: .serif))
+                .padding(.horizontal, 20)
+                .padding(.vertical, 8)
+                .background(MaillardTheme.warmGlass)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(MaillardTheme.warmStroke, lineWidth: 0.8)
+                )
+                .foregroundColor(MaillardTheme.cream)
+                .cornerRadius(10)
+            }
+        }
+        .transition(.opacity)
+    }
+
+    // MARK: - 胜利结算浮层
+
+    private func victoryOverlay(proxy: GeometryProxy) -> some View {
+        VictoryCelebrationView(
+            imageItem: currentImageItem,
+            level: currentLevel,
+            elapsedTime: finalElapsed,
+            newAchievements: scene?.newlyEarnedAchievements ?? [],
+            onNext: nextAvailablePuzzleParams().map { nextItem, nextLvl in
+                {
+                    switchToNextPuzzle(item: nextItem, level: nextLvl, size: proxy.size)
+                }
+            },
+            onReplay: {
+                showingVictory = false
+                setupScene(size: proxy.size)
+            },
+            onBack: {
+                dismiss()
+            }
+        )
+    }
+
+    // MARK: - 加载遮罩
+
+    private var loadingOverlay: some View {
+        ZStack {
+            MaillardTheme.deep.ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: MaillardTheme.gold))
+                    .scaleEffect(1.6)
+
+                VStack(spacing: 6) {
+                    Text("正在为您精心雕琢 \(currentLevel.pieceCount) 块 3D 拼图...")
+                        .font(.system(size: 16, weight: .bold, design: .serif))
+                        .foregroundColor(MaillardTheme.cream)
+
+                    Text("程序化贝塞尔锯齿切片 & 浮雕光影贴图合成中")
+                        .font(.system(size: 12))
+                        .foregroundColor(MaillardTheme.muted)
+                }
+            }
+        }
+        .transition(.opacity)
+    }
+
+    // MARK: - 场景构建与流转
 
     private func setupScene(size: CGSize) {
         guard size.width > 0 && size.height > 0 else { return }

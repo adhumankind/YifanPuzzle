@@ -17,26 +17,26 @@ public struct LevelRecord: Codable {
     }
 }
 
-/// 成就定义（成就系统雏形：中心思想是鼓励体验拼图乐趣，绝不惩罚玩家）
-public enum Achievement: String, CaseIterable {
-    case firstWin       // 初次通关
-    case noAssistWin    // 不用道具独立完成
-    case level5Win      // 完成第 5 级 700 块
-    case allImagesDone  // 收集完成全部图案
-
-    public var title: String {
-        switch self {
-        case .firstWin: return "初次通关"
-        case .noAssistWin: return "独立完成"
-        case .level5Win: return "登峰造极"
-        case .allImagesDone: return "收藏大家"
-        }
-    }
-}
-
 /// 进度存档管理器
 public final class ProgressManager {
     public static let shared = ProgressManager()
+
+    /// 成就定义（成就系统雏形：中心思想是鼓励体验拼图乐趣，绝不惩罚玩家）
+    public enum Achievement: String, CaseIterable {
+        case firstWin       // 初次通关
+        case noAssistWin    // 不用道具独立完成
+        case level5Win      // 完成第 5 级 700 块
+        case allImagesDone  // 收集完成全部图案
+
+        public var title: String {
+            switch self {
+            case .firstWin: return "初次通关"
+            case .noAssistWin: return "独立完成"
+            case .level5Win: return "登峰造极"
+            case .allImagesDone: return "收藏大家"
+            }
+        }
+    }
 
     private let userDefaultsKey = "com.yifan.puzzle.records"
     private let achievementsKey = "com.yifan.puzzle.achievements"
