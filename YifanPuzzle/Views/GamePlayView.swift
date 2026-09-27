@@ -217,6 +217,7 @@ public struct GamePlayView: View {
                         imageItem: currentImageItem,
                         level: currentLevel,
                         elapsedTime: finalElapsed,
+                        newAchievements: scene?.newlyEarnedAchievements ?? [],
                         onNext: nextAvailablePuzzleParams().map { nextItem, nextLvl in
                             {
                                 switchToNextPuzzle(item: nextItem, level: nextLvl, size: proxy.size)

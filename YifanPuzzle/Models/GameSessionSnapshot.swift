@@ -20,6 +20,7 @@ public struct GameSessionSnapshot: Codable {
     public let pieces: [SavedPieceState]
     public let splitRatio: Double
     public let timestamp: Date
+    public let usedAssistProps: Bool? // 旧版本快照无此字段，解码为 nil
 }
 
 /// 局中保存管理器

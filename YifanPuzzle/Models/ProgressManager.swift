@@ -17,16 +17,36 @@ public struct LevelRecord: Codable {
     }
 }
 
+/// 成就定义（成就系统雏形：中心思想是鼓励体验拼图乐趣，绝不惩罚玩家）
+public enum Achievement: String, CaseIterable {
+    case firstWin       // 初次通关
+    case noAssistWin    // 不用道具独立完成
+    case level5Win      // 完成第 5 级 700 块
+    case allImagesDone  // 收集完成全部图案
+
+    public var title: String {
+        switch self {
+        case .firstWin: return "初次通关"
+        case .noAssistWin: return "独立完成"
+        case .level5Win: return "登峰造极"
+        case .allImagesDone: return "收藏大家"
+        }
+    }
+}
+
 /// 进度存档管理器
 public final class ProgressManager {
     public static let shared = ProgressManager()
 
     private let userDefaultsKey = "com.yifan.puzzle.records"
+    private let achievementsKey = "com.yifan.puzzle.achievements"
     private var records: [String: LevelRecord] = [:] // key: "\(imageId)_\(levelId)"
+    private var unlocked: Set<String> = []
     private let lock = NSLock()
 
     private init() {
         loadRecords()
+        unlocked = Set(UserDefaults.standard.stringArray(forKey: achievementsKey) ?? [])
     }
 
     private func recordKey(imageId: String, levelId: Int) -> String {
@@ -75,6 +95,38 @@ public final class ProgressManager {
         return records.values.filter { $0.isCompleted }.count
     }
 
+    /// 通关后评估成就解锁情况，返回本次新解锁的成就
+    public func evaluateAchievements(imageId: String, levelId: Int, usedAssistProps: Bool) -> [Achievement] {
+        lock.lock()
+        defer { lock.unlock() }
+
+        var newlyUnlocked: [Achievement] = []
+        func unlock(_ achievement: Achievement, when condition: Bool) {
+            guard condition, !unlocked.contains(achievement.rawValue) else { return }
+            unlocked.insert(achievement.rawValue)
+            newlyUnlocked.append(achievement)
+        }
+
+        unlock(.firstWin, when: true)
+        unlock(.noAssistWin, when: !usedAssistProps)
+        unlock(.level5Win, when: levelId == 5)
+        let totalImages = PuzzleImageRepository.shared.allItems().count
+        let completedImages = Set(records.values.filter { $0.isCompleted }.map { $0.imageId }).count
+        unlock(.allImagesDone, when: totalImages > 0 && completedImages >= totalImages)
+
+        if !newlyUnlocked.isEmpty {
+            UserDefaults.standard.set(Array(unlocked), forKey: achievementsKey)
+        }
+        return newlyUnlocked
+    }
+
+    /// 当前已解锁的全部成就（按枚举定义顺序）
+    public func allAchievements() -> [(achievement: Achievement, isUnlocked: Bool)] {
+        lock.lock()
+        defer { lock.unlock() }
+        return Achievement.allCases.map { ($0, unlocked.contains($0.rawValue)) }
+    }
+
     /// 判断某个等级是否已解锁
     public func isLevelUnlocked(_ level: PuzzleLevel) -> Bool {
         if level.unlockRequiredStars == 0 { return true }
@@ -86,6 +138,8 @@ public final class ProgressManager {
         lock.lock()
         defer { lock.unlock() }
         records.removeAll()
+        unlocked.removeAll()
         UserDefaults.standard.removeObject(forKey: userDefaultsKey)
+        UserDefaults.standard.removeObject(forKey: achievementsKey)
     }
 }

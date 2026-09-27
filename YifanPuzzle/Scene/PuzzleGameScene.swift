@@ -35,6 +35,10 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
     private var highestZIndex: CGFloat = 100
     private var rotationGestureRecognizer: UIRotationGestureRecognizer?
     private var woodBackdropNode: SKSpriteNode?
+    /// 本局是否使用过辅助道具（用于"独立完成"成就判定）
+    public private(set) var usedAssistProps: Bool = false
+    /// 通关时新解锁的成就（供结算弹窗展示）
+    public private(set) var newlyEarnedAchievements: [ProgressManager.Achievement] = []
 
     // 外部回调
     public var onProgressUpdate: ((Int, Int) -> Void)? // (已拼好数, 总数)
@@ -237,6 +241,10 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         let savedSnapshot = SessionSaveManager.shared.load()
         let isResuming = (savedSnapshot != nil && savedSnapshot?.imageId == imageItem.id && savedSnapshot?.levelId == level.id)
         let savedDict = isResuming ? Dictionary(uniqueKeysWithValues: (savedSnapshot!.pieces.map { ($0.id, $0) })) : [:]
+        if isResuming {
+            // 恢复本局是否已使用过辅助道具（保证"独立完成"成就判定跨中断准确）
+            usedAssistProps = savedSnapshot?.usedAssistProps ?? false
+        }
 
         for pieceData in pieceDatas {
             guard let tex = renderedDict[pieceData.id] else { continue }
@@ -571,6 +579,11 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
             SessionSaveManager.shared.clear()
             let elapsed = Date().timeIntervalSince(startTime)
             ProgressManager.shared.markCompleted(imageId: imageItem.id, levelId: level.id, elapsedSeconds: elapsed)
+            newlyEarnedAchievements = ProgressManager.shared.evaluateAchievements(
+                imageId: imageItem.id,
+                levelId: level.id,
+                usedAssistProps: usedAssistProps
+            )
             GameFeedbackEngine.shared.triggerVictory()
             celebrateCompletion()
             // 彩带先飘 0.9 秒让玩家看清满屏庆祝，再淡入结算弹窗（弱引用防止场景销毁后回调）
@@ -601,6 +614,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
     /// 「找一找」道具：为一块未归位碎片给出提示（本体金色光环 + 正确板位高亮闪烁）
     public func giveHint() {
         guard let piece = selectAssistCandidate() else { return }
+        usedAssistProps = true
         GameFeedbackEngine.shared.triggerHint()
 
         // 本体金色光环脉冲（扩散两轮）
@@ -654,6 +668,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
     /// 「拼一块」道具：将一块未归位碎片魔法般地自动送回正确板位（无限次）
     public func autoPlaceOnePiece() {
         guard let piece = selectAssistCandidate() else { return }
+        usedAssistProps = true
 
         // 若碎片正在托盘中，先释放格子
         if let slot = piece.traySlotIndex {
@@ -777,7 +792,8 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
             elapsedTime: Date().timeIntervalSince(startTime),
             pieces: savedPieces,
             splitRatio: Double(currentSplitRatio),
-            timestamp: Date()
+            timestamp: Date(),
+            usedAssistProps: usedAssistProps
         )
         SessionSaveManager.shared.save(snapshot: snapshot)
     }

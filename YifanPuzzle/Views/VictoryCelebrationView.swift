@@ -5,6 +5,7 @@ public struct VictoryCelebrationView: View {
     public let imageItem: PuzzleImageItem
     public let level: PuzzleLevel
     public let elapsedTime: TimeInterval
+    public let newAchievements: [ProgressManager.Achievement]
     public let onNext: (() -> Void)?
     public let onReplay: () -> Void
     public let onBack: () -> Void
@@ -16,6 +17,7 @@ public struct VictoryCelebrationView: View {
         imageItem: PuzzleImageItem,
         level: PuzzleLevel,
         elapsedTime: TimeInterval,
+        newAchievements: [ProgressManager.Achievement] = [],
         onNext: (() -> Void)? = nil,
         onReplay: @escaping () -> Void,
         onBack: @escaping () -> Void
@@ -23,6 +25,7 @@ public struct VictoryCelebrationView: View {
         self.imageItem = imageItem
         self.level = level
         self.elapsedTime = elapsedTime
+        self.newAchievements = newAchievements
         self.onNext = onNext
         self.onReplay = onReplay
         self.onBack = onBack
@@ -80,6 +83,37 @@ public struct VictoryCelebrationView: View {
                     RoundedRectangle(cornerRadius: 14)
                         .stroke(MaillardTheme.warmStroke, lineWidth: 0.8)
                 )
+
+                // 成就墙（本次新解锁的成就带"新"角标高亮）
+                let achievementEntries = ProgressManager.shared.allAchievements()
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                    ForEach(achievementEntries, id: \.achievement.rawValue) { entry in
+                        let isNew = newAchievements.contains(entry.achievement)
+                        HStack(spacing: 6) {
+                            Image(systemName: entry.isUnlocked ? "seal.fill" : "seal")
+                                .font(.system(size: 12))
+                                .foregroundColor(entry.isUnlocked ? MaillardTheme.gold : MaillardTheme.muted.opacity(0.45))
+                            Text(entry.achievement.title)
+                                .font(.system(size: 12, weight: entry.isUnlocked ? .bold : .regular))
+                                .foregroundColor(entry.isUnlocked ? MaillardTheme.cream : MaillardTheme.muted.opacity(0.55))
+                            if isNew {
+                                Text("新")
+                                    .font(.system(size: 9, weight: .black))
+                                    .foregroundColor(MaillardTheme.deep)
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 1)
+                                    .background(MaillardTheme.goldGradient)
+                                    .cornerRadius(4)
+                            }
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .frame(maxWidth: .infinity)
+                        .background(entry.isUnlocked ? MaillardTheme.warmGlass : Color.black.opacity(0.14))
+                        .cornerRadius(8)
+                    }
+                }
+                .padding(.horizontal, 2)
 
                 HStack(spacing: 16) {
                     Button {

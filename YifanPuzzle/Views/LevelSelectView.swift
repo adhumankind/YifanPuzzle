@@ -163,6 +163,17 @@ public struct LevelSelectView: View {
                         )
                         .scaleEffect(selectedLevelIndex == idx ? 1.04 : 1.0)
                         .shadow(color: selectedLevelIndex == idx ? MaillardTheme.gold.opacity(0.35) : Color.clear, radius: 8, y: 2)
+                        .overlay(alignment: .topTrailing) {
+                            // 本关全部图案完成时，芯片右上角佩戴小金冠
+                            if unlocked && isLevelFullyCompleted(lvl) {
+                                Image("sprite_crown")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(height: 15)
+                                    .offset(x: 8, y: -7)
+                                    .shadow(color: Color.black.opacity(0.4), radius: 2)
+                            }
+                        }
                         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedLevelIndex)
                     }
                     .disabled(!unlocked)
@@ -359,6 +370,15 @@ public struct LevelSelectView: View {
         }
         .padding(.vertical, 4)
         .frame(maxWidth: .infinity)
+    }
+
+    /// 判断某等级下的全部图案是否均已通关（用于小金冠标识）
+    private func isLevelFullyCompleted(_ level: PuzzleLevel) -> Bool {
+        let items = PuzzleImageRepository.shared.allItems().filter { level.imageIds.contains($0.id) }
+        guard !items.isEmpty else { return false }
+        return items.allSatisfy { item in
+            ProgressManager.shared.getRecord(imageId: item.id, levelId: level.id)?.isCompleted == true
+        }
     }
 
     private func formatDisplayTime(_ seconds: Double) -> String {
