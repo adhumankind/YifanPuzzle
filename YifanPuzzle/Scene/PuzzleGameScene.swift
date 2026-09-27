@@ -470,13 +470,14 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
                 )
 
                 if snap {
-                    // 合并成同一组
+                    // 合并成同一组，并持久化到对局存档
                     let targetGroupId = dragged.groupId
                     let oldGroupId = other.groupId
                     for p in pieceNodes.values where p.groupId == oldGroupId {
                         p.groupId = targetGroupId
                     }
                     GameFeedbackEngine.shared.triggerSnap()
+                    saveCurrentSession()
                     break
                 }
             }
