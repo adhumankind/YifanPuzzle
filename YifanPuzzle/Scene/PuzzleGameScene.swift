@@ -568,5 +568,12 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
             view.removeGestureRecognizer(gesture)
             self.rotationGestureRecognizer = nil
         }
+
+        // 主动解除节点树与纹理引用，防止大碎片关卡残留占用 GPU 显存
+        removeAllActions()
+        removeAllChildren()
+        pieceNodes.removeAll()
+        activeDraggedPieces.removeAll()
+        dragStartPiecePositions.removeAll()
     }
 }
