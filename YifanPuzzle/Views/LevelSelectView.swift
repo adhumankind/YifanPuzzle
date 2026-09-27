@@ -1,8 +1,8 @@
 import SwiftUI
 import CoreMotion
 
-/// 选关页大图预览的轻量姿态观察器（独立实例，不与对局场景视差管理器抢占回调）
-private final class PreviewTiltObserver: ObservableObject {
+/// 轻量姿态观察器（独立 CMMotionManager 实例，不与对局场景视差管理器抢占回调；选关页与看原图浮层共用）
+final class PreviewTiltObserver: ObservableObject {
     @Published var roll: CGFloat = 0
     @Published var pitch: CGFloat = 0
     private let manager = CMMotionManager()

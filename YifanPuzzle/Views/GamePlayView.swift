@@ -19,6 +19,7 @@ public struct GamePlayView: View {
     @State private var finalElapsed: TimeInterval = 0
     @State private var isUnderlayOn: Bool = GameSettings.shared.showGhostOutline
     @State private var showGuide = !UserDefaults.standard.bool(forKey: "com.yifan.puzzle.guide_seen")
+    @StateObject private var tiltObserver = PreviewTiltObserver()
 
     // 内部持有的 SpriteKit 游戏场景
     @State private var scene: PuzzleGameScene? = nil
@@ -72,6 +73,14 @@ public struct GamePlayView: View {
                         break
                     }
                 }
+                .onChange(of: showingPreview) { showing in
+                    // 看原图浮层的姿态视差与视差开关联动
+                    if showing && GameSettings.shared.parallax3DEnabled {
+                        tiltObserver.start()
+                    } else {
+                        tiltObserver.stop()
+                    }
+                }
         }
     }
 
@@ -91,8 +100,8 @@ public struct GamePlayView: View {
             topHUD(proxy: proxy)
             propToolbar(proxy: proxy)
 
-            // 首次进入对局的轻量引导浮层（轻点任意处或 7 秒后自动淡出）
-            if showGuide {
+            // 首次进入对局的轻量引导浮层（加载完成后才出现；轻点任意处或 7 秒后自动淡出）
+            if showGuide && !isLoadingPieces {
                 guideOverlay
             }
 
@@ -331,6 +340,17 @@ public struct GamePlayView: View {
                         .frame(maxWidth: proxy.size.width * 0.75, maxHeight: proxy.size.height * 0.75)
                         .cornerRadius(12)
                         .shadow(radius: 20)
+                        .rotation3DEffect(
+                            .degrees(Double(min(max(tiltObserver.roll, -0.3), 0.3)) * (GameSettings.shared.parallax3DEnabled ? 9 : 0)),
+                            axis: (x: 0, y: 1, z: 0),
+                            perspective: 0.6
+                        )
+                        .rotation3DEffect(
+                            .degrees(Double(min(max(tiltObserver.pitch, -0.3), 0.3)) * (GameSettings.shared.parallax3DEnabled ? -7 : 0)),
+                            axis: (x: 1, y: 0, z: 0),
+                            perspective: 0.6
+                        )
+                        .animation(.linear(duration: 0.08), value: tiltObserver.roll)
                 }
                 Button("关闭原图") {
                     withAnimation(.easeInOut(duration: 0.2)) {
