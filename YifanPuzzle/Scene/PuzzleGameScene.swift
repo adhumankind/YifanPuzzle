@@ -238,9 +238,17 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
                     node.zPosition = 20
                 }
             } else {
-                // 初始随机散落在右侧堆放区
-                let randomX = pileRect.origin.x + CGFloat(rng.next() % 1000) / 1000.0 * pileRect.width
-                let randomY = pileRect.origin.y + CGFloat(rng.next() % 1000) / 1000.0 * pileRect.height
+                // 初始散落在右侧堆放区：内缩安全边界，避免碎片边缘溢出屏幕或被拖动滑块遮挡
+                let pW = boardRect.width * pieceData.normalizedSize.width
+                let pH = boardRect.height * pieceData.normalizedSize.height
+                let insetX = max(10, pW * 0.4)
+                let insetY = max(10, pH * 0.4)
+
+                let availW = max(20, pileRect.width - insetX * 2)
+                let availH = max(20, pileRect.height - insetY * 2)
+
+                let randomX = pileRect.origin.x + insetX + CGFloat(rng.next() % 1000) / 1000.0 * availW
+                let randomY = pileRect.origin.y + insetY + CGFloat(rng.next() % 1000) / 1000.0 * availH
                 node.position = CGPoint(x: randomX, y: randomY)
 
                 // 自由旋转开关逻辑
