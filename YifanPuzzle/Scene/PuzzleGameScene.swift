@@ -415,6 +415,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
             if let slotIndex = trayNode.hitSlotIndex(at: touchLocation) {
                 trayNode.placePiece(singlePiece, intoSlot: slotIndex)
                 GameFeedbackEngine.shared.triggerDrop()
+                saveCurrentSession()
                 return
             }
         }
