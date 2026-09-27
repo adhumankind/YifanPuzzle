@@ -5,16 +5,25 @@ public struct VictoryCelebrationView: View {
     public let imageItem: PuzzleImageItem
     public let level: PuzzleLevel
     public let elapsedTime: TimeInterval
+    public let onNext: (() -> Void)?
     public let onReplay: () -> Void
     public let onBack: () -> Void
 
     @State private var appearScale: CGFloat = 0.8
     @State private var appearOpacity: Double = 0.0
 
-    public init(imageItem: PuzzleImageItem, level: PuzzleLevel, elapsedTime: TimeInterval, onReplay: @escaping () -> Void, onBack: @escaping () -> Void) {
+    public init(
+        imageItem: PuzzleImageItem,
+        level: PuzzleLevel,
+        elapsedTime: TimeInterval,
+        onNext: (() -> Void)? = nil,
+        onReplay: @escaping () -> Void,
+        onBack: @escaping () -> Void
+    ) {
         self.imageItem = imageItem
         self.level = level
         self.elapsedTime = elapsedTime
+        self.onNext = onNext
         self.onReplay = onReplay
         self.onBack = onBack
     }
@@ -64,34 +73,51 @@ public struct VictoryCelebrationView: View {
                 .background(Color.white.opacity(0.1))
                 .cornerRadius(14)
 
-                HStack(spacing: 20) {
+                HStack(spacing: 16) {
                     Button {
                         onReplay()
                     } label: {
-                        HStack {
+                        HStack(spacing: 6) {
                             Image(systemName: "arrow.counterclockwise")
                             Text("再拼一次")
                         }
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.white)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 16)
                         .padding(.vertical, 10)
-                        .background(Color.white.opacity(0.2))
+                        .background(Color.white.opacity(0.18))
                         .cornerRadius(12)
+                    }
+
+                    if let nextAction = onNext {
+                        Button {
+                            nextAction()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "forward.fill")
+                                Text("下一幅图")
+                            }
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .background(Color.yellow)
+                            .cornerRadius(12)
+                        }
                     }
 
                     Button {
                         onBack()
                     } label: {
-                        HStack {
-                            Image(systemName: "checkmark")
+                        HStack(spacing: 6) {
+                            Image(systemName: "square.grid.2x2")
                             Text("返回关卡")
                         }
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(.black)
-                        .padding(.horizontal, 24)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(onNext == nil ? .black : .white)
+                        .padding(.horizontal, 18)
                         .padding(.vertical, 10)
-                        .background(Color.cyan)
+                        .background(onNext == nil ? Color.cyan : Color.white.opacity(0.18))
                         .cornerRadius(12)
                     }
                 }

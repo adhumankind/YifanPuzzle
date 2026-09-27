@@ -4,8 +4,8 @@ import SpriteKit
 /// 对局主容器视图（纯横屏 HUD + SpriteKit 底层场景）
 public struct GamePlayView: View {
     @Environment(\.dismiss) var dismiss
-    public let imageItem: PuzzleImageItem
-    public let level: PuzzleLevel
+    @State private var currentImageItem: PuzzleImageItem
+    @State private var currentLevel: PuzzleLevel
 
     @State private var placedCount: Int = 0
     @State private var totalCount: Int = 0
@@ -23,8 +23,8 @@ public struct GamePlayView: View {
     private let timer = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
 
     public init(imageItem: PuzzleImageItem, level: PuzzleLevel) {
-        self.imageItem = imageItem
-        self.level = level
+        _currentImageItem = State(initialValue: imageItem)
+        _currentLevel = State(initialValue: level)
     }
 
     public var body: some View {
@@ -54,10 +54,10 @@ public struct GamePlayView: View {
 
                         // 关卡信息与进度
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(imageItem.title)
+                            Text(currentImageItem.title)
                                 .font(.system(size: 15, weight: .bold))
                                 .foregroundColor(.white)
-                            Text("第\(level.id)级 · 进度: \(placedCount)/\(totalCount > 0 ? totalCount : level.pieceCount)")
+                            Text("第\(currentLevel.id)级 · 进度: \(placedCount)/\(totalCount > 0 ? totalCount : currentLevel.pieceCount)")
                                 .font(.system(size: 11))
                                 .foregroundColor(.white.opacity(0.7))
                         }
@@ -125,7 +125,7 @@ public struct GamePlayView: View {
                             }
 
                         VStack(spacing: 12) {
-                            if let uiImg = PuzzleImageRepository.shared.loadImage(for: imageItem) {
+                            if let uiImg = PuzzleImageRepository.shared.loadImage(for: currentImageItem) {
                                 Image(uiImage: uiImg)
                                     .resizable()
                                     .scaledToFit()
@@ -152,9 +152,14 @@ public struct GamePlayView: View {
                 // 胜利结算浮层
                 if showingVictory {
                     VictoryCelebrationView(
-                        imageItem: imageItem,
-                        level: level,
+                        imageItem: currentImageItem,
+                        level: currentLevel,
                         elapsedTime: finalElapsed,
+                        onNext: nextAvailablePuzzleParams().map { nextItem, nextLvl in
+                            {
+                                switchToNextPuzzle(item: nextItem, level: nextLvl, size: proxy.size)
+                            }
+                        },
                         onReplay: {
                             showingVictory = false
                             setupScene(size: proxy.size)
@@ -176,7 +181,7 @@ public struct GamePlayView: View {
                                 .scaleEffect(1.6)
 
                             VStack(spacing: 6) {
-                                Text("正在为您精心雕琢 \(level.pieceCount) 块 3D 拼图...")
+                                Text("正在为您精心雕琢 \(currentLevel.pieceCount) 块 3D 拼图...")
                                     .font(.system(size: 16, weight: .bold))
                                     .foregroundColor(.white)
 
@@ -219,12 +224,12 @@ public struct GamePlayView: View {
 
     private func setupScene(size: CGSize) {
         guard size.width > 0 && size.height > 0 else { return }
-        let img = PuzzleImageRepository.shared.loadImage(for: imageItem) ?? PuzzleImageRepository.generateFallbackImage(title: imageItem.title)
-        let s = PuzzleGameScene(size: size, imageItem: imageItem, level: level, sourceImage: img)
-        self.totalCount = level.pieceCount
+        let img = PuzzleImageRepository.shared.loadImage(for: currentImageItem) ?? PuzzleImageRepository.generateFallbackImage(title: currentImageItem.title)
+        let s = PuzzleGameScene(size: size, imageItem: currentImageItem, level: currentLevel, sourceImage: img)
+        self.totalCount = currentLevel.pieceCount
 
         // 尝试恢复已保存的计时进度
-        if let snapshot = SessionSaveManager.shared.load(), snapshot.imageId == imageItem.id && snapshot.levelId == level.id {
+        if let snapshot = SessionSaveManager.shared.load(), snapshot.imageId == currentImageItem.id && snapshot.levelId == currentLevel.id {
             self.elapsedTime = snapshot.elapsedTime
         } else {
             self.elapsedTime = 0
@@ -252,6 +257,42 @@ public struct GamePlayView: View {
         }
 
         self.scene = s
+    }
+
+    private func nextAvailablePuzzleParams() -> (PuzzleImageItem, PuzzleLevel)? {
+        let config = PuzzleConfig.default
+        let allItems = PuzzleImageRepository.shared.allItems()
+
+        // 1. 同一等级下的下一幅图
+        let currentLevelItems = allItems.filter { currentLevel.imageIds.contains($0.id) }
+        if let currentIndex = currentLevelItems.firstIndex(where: { $0.id == currentImageItem.id }),
+           currentIndex + 1 < currentLevelItems.count {
+            return (currentLevelItems[currentIndex + 1], currentLevel)
+        }
+
+        // 2. 跨入下一关卡的第 1 幅图
+        if let lvlIndex = config.levels.firstIndex(where: { $0.id == currentLevel.id }),
+           lvlIndex + 1 < config.levels.count {
+            let nextLevel = config.levels[lvlIndex + 1]
+            if ProgressManager.shared.isLevelUnlocked(nextLevel) {
+                let nextLevelItems = allItems.filter { nextLevel.imageIds.contains($0.id) }
+                if let firstItem = nextLevelItems.first {
+                    return (firstItem, nextLevel)
+                }
+            }
+        }
+
+        return nil
+    }
+
+    private func switchToNextPuzzle(item: PuzzleImageItem, level: PuzzleLevel, size: CGSize) {
+        self.showingVictory = false
+        self.isLoadingPieces = true
+        self.currentImageItem = item
+        self.currentLevel = level
+        self.placedCount = 0
+        self.totalCount = level.pieceCount
+        setupScene(size: size)
     }
 
     private func formatTime(_ sec: TimeInterval) -> String {
