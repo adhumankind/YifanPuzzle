@@ -36,6 +36,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
 
     // 外部回调
     public var onProgressUpdate: ((Int, Int) -> Void)? // (已拼好数, 总数)
+    public var onPiecesReady: (() -> Void)? // 碎片切片与贴图全部构建完成就绪
     public var onGameCompleted: ((TimeInterval) -> Void)?
 
     // 计时器与完成标记
@@ -258,6 +259,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
 
         let placedCount = pieceNodes.values.filter { $0.isPlaced }.count
         onProgressUpdate?(placedCount, pieceDatas.count)
+        onPiecesReady?()
     }
 
     public func applyRotationSettingChanged(allowFree: Bool) {

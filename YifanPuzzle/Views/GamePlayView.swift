@@ -14,6 +14,7 @@ public struct GamePlayView: View {
     @State private var showingPreview = false
     @State private var showingVictory = false
     @State private var showingSettings = false
+    @State private var isLoadingPieces = true
     @State private var finalElapsed: TimeInterval = 0
 
     // 内部持有的 SpriteKit 游戏场景
@@ -162,6 +163,30 @@ public struct GamePlayView: View {
                         }
                     )
                 }
+
+                // 首次加载/高阶大关卡切片渲染遮罩过渡动画
+                if isLoadingPieces {
+                    ZStack {
+                        Color(red: 0.10, green: 0.12, blue: 0.16).ignoresSafeArea()
+
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .cyan))
+                                .scaleEffect(1.6)
+
+                            VStack(spacing: 6) {
+                                Text("正在为您精心雕琢 \(level.pieceCount) 块 3D 拼图...")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
+
+                                Text("程序化贝塞尔锯齿切片 & 浮雕光影贴图合成中")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.white.opacity(0.6))
+                            }
+                        }
+                    }
+                    .transition(.opacity)
+                }
             }
             .onAppear {
                 setupScene(size: proxy.size)
@@ -209,6 +234,13 @@ public struct GamePlayView: View {
             _ = s
             self.placedCount = placed
             self.totalCount = total
+        }
+
+        s.onPiecesReady = { [weak s] in
+            _ = s
+            withAnimation(.easeInOut(duration: 0.3)) {
+                self.isLoadingPieces = false
+            }
         }
 
         s.onGameCompleted = { [weak s] elapsed in
