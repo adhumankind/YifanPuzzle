@@ -453,6 +453,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
                 piece.animateDrop()
             }
             GameFeedbackEngine.shared.triggerDrop()
+            saveCurrentSession()
         }
     }
 
