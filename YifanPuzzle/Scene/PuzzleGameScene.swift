@@ -403,7 +403,12 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
 
         for piece in activeDraggedPieces {
             if let startPos = dragStartPiecePositions[piece.pieceData.id] {
-                piece.position = CGPoint(x: startPos.x + deltaX, y: startPos.y + deltaY)
+                let targetX = startPos.x + deltaX
+                let targetY = startPos.y + deltaY
+                // 防滑出屏幕可视边界约束（保留至少 15pt 在可视区域内）
+                let clampedX = min(max(targetX, 15), size.width - 15)
+                let clampedY = min(max(targetY, 15), size.height - 15)
+                piece.position = CGPoint(x: clampedX, y: clampedY)
             }
         }
     }
