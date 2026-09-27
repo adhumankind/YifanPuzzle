@@ -5,7 +5,8 @@ import UIKit
 public final class GameFeedbackEngine {
     public static let shared = GameFeedbackEngine()
 
-    private var audioPlayers: [String: AVAudioPlayer] = [:]
+    private var audioPlayers: [String: [AVAudioPlayer]] = [:]
+    private var playerIndices: [String: Int] = [:]
     private let impactLight = UIImpactFeedbackGenerator(style: .light)
     private let impactMedium = UIImpactFeedbackGenerator(style: .medium)
     private let notificationFeedback = UINotificationFeedbackGenerator()
@@ -31,19 +32,19 @@ public final class GameFeedbackEngine {
     private func preloadSounds() {
         // 尝试从 Bundle 加载真实音频，若无则使用程序化生成的真实微敲击声
         if audioPlayers["snap"] == nil {
-            if let snapPlayer = makeSyntheticSound(frequency: 880, duration: 0.08, type: .snap) {
-                audioPlayers["snap"] = snapPlayer
-            }
+            let pool = (0..<4).compactMap { _ in makeSyntheticSound(frequency: 880, duration: 0.08, type: .snap) }
+            audioPlayers["snap"] = pool
+            playerIndices["snap"] = 0
         }
         if audioPlayers["pickup"] == nil {
-            if let pickupPlayer = makeSyntheticSound(frequency: 440, duration: 0.05, type: .soft) {
-                audioPlayers["pickup"] = pickupPlayer
-            }
+            let pool = (0..<3).compactMap { _ in makeSyntheticSound(frequency: 440, duration: 0.05, type: .soft) }
+            audioPlayers["pickup"] = pool
+            playerIndices["pickup"] = 0
         }
         if audioPlayers["win"] == nil {
-            if let winPlayer = makeSyntheticSound(frequency: 660, duration: 0.35, type: .chime) {
-                audioPlayers["win"] = winPlayer
-            }
+            let pool = (0..<2).compactMap { _ in makeSyntheticSound(frequency: 660, duration: 0.35, type: .chime) }
+            audioPlayers["win"] = pool
+            playerIndices["win"] = 0
         }
     }
 
@@ -85,7 +86,11 @@ public final class GameFeedbackEngine {
     }
 
     private func playSound(_ name: String) {
-        guard let player = audioPlayers[name] else { return }
+        guard let pool = audioPlayers[name], !pool.isEmpty else { return }
+        let currentIndex = playerIndices[name] ?? 0
+        let player = pool[currentIndex]
+        playerIndices[name] = (currentIndex + 1) % pool.count
+
         player.currentTime = 0
         player.play()
     }
