@@ -58,7 +58,7 @@ public final class PuzzlePieceNode: SKNode {
         let overshoot = SKAction.scale(to: 1.11, duration: 0.09)
         overshoot.timingMode = .easeOut
         let settle = SKAction.scale(to: 1.06, duration: 0.09)
-        settle.timingMode = .easeInOut
+        settle.timingMode = .easeInEaseOut
 
         let liftAction = SKAction.sequence([
             SKAction.group([
@@ -82,7 +82,7 @@ public final class PuzzlePieceNode: SKNode {
         let compress = SKAction.scale(to: 0.965, duration: 0.08)
         compress.timingMode = .easeOut
         let restore = SKAction.scale(to: 1.0, duration: 0.11)
-        restore.timingMode = .easeInOut
+        restore.timingMode = .easeInEaseOut
 
         let dropAction = SKAction.sequence([
             SKAction.group([
