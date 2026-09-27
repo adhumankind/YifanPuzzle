@@ -78,6 +78,8 @@ public struct MainMenuView: View {
                                 BadgeItem(title: "挑战等级", value: "5 个梯度")
                                 BadgeItem(title: "已通关", value: "\(ProgressManager.shared.completedCount()) 关")
                                     .id(refreshTrigger)
+                                BadgeItem(title: "已获成就", value: "\(ProgressManager.shared.allAchievements().filter { $0.isUnlocked }.count)/\(ProgressManager.Achievement.allCases.count)")
+                                    .id(refreshTrigger)
                             }
                         }
                         .padding(.leading, max(30, proxy.safeAreaInsets.leading + 16))

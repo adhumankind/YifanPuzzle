@@ -735,6 +735,12 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
     /// 通关庆祝：全屏飘落的美拉德金色彩带
     public func celebrateCompletion() {
         guard size.width > 0 && size.height > 0 else { return }
+
+        // 风铃音层稍晚于胜利主音效响起，与彩带飘落同步
+        run(SKAction.sequence([
+            SKAction.wait(forDuration: 0.4),
+            SKAction.run { GameFeedbackEngine.shared.triggerCelebration() }
+        ]))
         let palette: [SKColor] = [
             SKColor(red: 0.906, green: 0.698, blue: 0.400, alpha: 1.0),
             SKColor(red: 0.776, green: 0.545, blue: 0.349, alpha: 1.0),

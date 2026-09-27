@@ -56,6 +56,21 @@ public final class GameFeedbackEngine {
             audioPlayers["hint"] = pool
             playerIndices["hint"] = 0
         }
+        if audioPlayers["bells"] == nil {
+            let pool = (0..<2).compactMap { _ in makeSyntheticSound(frequency: 523, duration: 0.9, type: .bells) }
+            audioPlayers["bells"] = pool
+            playerIndices["bells"] = 0
+        }
+    }
+
+    /// 播放通关彩带时刻的金色风铃音层（与胜利音效叠加）
+    public func triggerCelebration() {
+        if GameSettings.shared.hapticsEnabled {
+            impactLight.impactOccurred(intensity: 0.3)
+        }
+        if GameSettings.shared.soundEnabled {
+            playSound("bells")
+        }
     }
 
     /// 播放「拼一块」魔法归位音效与触感
@@ -125,7 +140,7 @@ public final class GameFeedbackEngine {
         player.play()
     }
 
-    private enum SyntheticType { case snap, soft, chime, magic, hint }
+    private enum SyntheticType { case snap, soft, chime, magic, hint, bells }
 
     /// 生成轻快清脆的 16-bit PCM WAV 音效
     private func makeSyntheticSound(frequency: Double, duration: Double, type: SyntheticType) -> AVAudioPlayer? {
@@ -160,6 +175,12 @@ public final class GameFeedbackEngine {
                 // 微光颤音：高频轻柔闪烁
                 envelope = pow(1.0 - progress, 1.5) * (0.72 + 0.28 * sin(progress * .pi * 12))
                 freq = frequency
+            case .bells:
+                // 金色风铃三连音琶音：C5 → E5 → G5，每段独立衰减
+                let noteIndex = min(2, Int(progress * 3))
+                freq = [523.25, 659.25, 783.99][noteIndex]
+                let noteProgress = (progress * 3) - Double(noteIndex)
+                envelope = pow(1.0 - noteProgress, 1.6) * 0.9
             }
 
             // 相位积分（支持频率随时间变化）
