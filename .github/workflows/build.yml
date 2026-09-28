@@ -58,7 +58,7 @@ jobs:
             -scheme YifanPuzzleUITests \
             -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
             -only-testing:YifanPuzzleUITests/YifanPuzzleUITests/testAppLaunchAndEnterGame \
-            -quiet | tail -40
+            -quiet
 
       - name: Build Archive (Unsigned)
         run: |
