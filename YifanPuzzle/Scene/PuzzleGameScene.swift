@@ -320,6 +320,13 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         ghostImageNode?.run(SKAction.fadeAlpha(to: showGhost ? 0.14 : 0.0, duration: 0.2))
     }
 
+    /// 拖拽期间临时增亮幽灵参考底图（0.14→0.24），松手恢复，方便对照归位
+    private func setGhostBoost(_ boosted: Bool) {
+        guard let ghost = ghostImageNode else { return }
+        let target: CGFloat = GameSettings.shared.showGhostOutline ? (boosted ? 0.24 : 0.14) : 0.0
+        ghost.run(SKAction.fadeAlpha(to: target, duration: 0.18))
+    }
+
     /// 将原图转为单色（去饱和）版本，用作极淡的半透明参考底图
     private func makeMonoGhostImage(_ image: UIImage) -> UIImage {
         guard let ciImage = CIImage(image: image),
@@ -401,6 +408,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
                 piece.zPosition = highestZIndex
                 piece.animatePickup()
                 GameFeedbackEngine.shared.triggerPickup()
+                setGhostBoost(true)
                 beginDragging(pieces: [piece], at: touchLocation)
                 return
             }
@@ -429,6 +437,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
                 p.animatePickup()
             }
             GameFeedbackEngine.shared.triggerPickup()
+            setGhostBoost(true)
             beginDragging(pieces: groupPieces, at: touchLocation)
         }
     }
@@ -499,13 +508,23 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         }
 
         guard !activeDraggedPieces.isEmpty else { return }
+        setGhostBoost(false)
         let dragged = activeDraggedPieces
         activeDraggedPieces = []
 
         // A. 检查是否拖入了底部的 5 格临时存放托盘（仅单块碎片允许存入）
         if dragged.count == 1, let singlePiece = dragged.first {
             if let slotIndex = trayNode.hitSlotIndex(at: touchLocation) {
-                trayNode.placePiece(singlePiece, intoSlot: slotIndex)
+                if let fromSlot = singlePiece.traySlotIndex, fromSlot != slotIndex,
+                   let occupant = trayNode.slotPieces[slotIndex], occupant !== singlePiece {
+                    // 托盘内互拖：双方暂离槽位再对调，占用者入驻原槽
+                    trayNode.removePiece(fromSlot: slotIndex)
+                    trayNode.removePiece(fromSlot: fromSlot)
+                    trayNode.placePiece(occupant, intoSlot: fromSlot)
+                    trayNode.placePiece(singlePiece, intoSlot: slotIndex)
+                } else {
+                    trayNode.placePiece(singlePiece, intoSlot: slotIndex)
+                }
                 GameFeedbackEngine.shared.triggerDrop()
                 saveCurrentSession()
                 return
