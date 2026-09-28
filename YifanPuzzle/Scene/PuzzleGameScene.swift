@@ -157,8 +157,8 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         boardBackgroundNode.zPosition = 1
         addChild(boardBackgroundNode)
 
-        // 幽灵参考底图：极淡的单色（去饱和）原图，按设置可开关，方便玩家对照拼图乐趣
-        ghostImageNode = SKSpriteNode(texture: SKTexture(image: makeMonoGhostImage(sourceImage)), size: boardRect.size)
+        // 幽灵参考底图：先占位，单色（去饱和）版本在后台线程生成后换装淡入
+        ghostImageNode = SKSpriteNode(texture: nil, color: .clear, size: boardRect.size)
         ghostImageNode.position = CGPoint(x: boardRect.midX, y: boardRect.midY)
         ghostImageNode.zPosition = 2
         ghostImageNode.alpha = GameSettings.shared.showGhostOutline ? 0.14 : 0.0
@@ -228,6 +228,18 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         let seed = PuzzleMeshGenerator.stableSeed(for: imageItem.id)
         self.pieceDatas = PuzzleMeshGenerator.generateGrid(columns: level.gridColumns, rows: level.gridRows, seed: seed)
 
+        // 单色幽灵底图在后台线程生成（CoreImage 滤重，避免主线程卡顿与真机渲染上下文风险）
+        let source = sourceImage
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let mono = Self.makeMonoGhostImage(source)
+            DispatchQueue.main.async {
+                guard let self = self, let ghost = self.ghostImageNode else { return }
+                ghost.texture = SKTexture(image: mono)
+                let target: CGFloat = GameSettings.shared.showGhostOutline ? 0.14 : 0.0
+                ghost.run(SKAction.fadeAlpha(to: target, duration: 0.25))
+            }
+        }
+
         // 异步渲染高质量碎片 3D 贴图
         PuzzlePieceRenderer.renderAllPieces(sourceImage: sourceImage, pieces: pieceDatas, boardPixelSize: boardRect.size) { [weak self] renderedDict in
             guard let self = self else { return }
@@ -242,7 +254,13 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         // 尝试加载中断续玩快照
         let savedSnapshot = SessionSaveManager.shared.load()
         let isResuming = (savedSnapshot != nil && savedSnapshot?.imageId == imageItem.id && savedSnapshot?.levelId == level.id)
-        let savedDict = isResuming ? Dictionary(uniqueKeysWithValues: (savedSnapshot!.pieces.map { ($0.id, $0) })) : [:]
+        // 逐条填充并忽略重复 id（Dictionary(uniqueKeysWithValues:) 遇重复键会直接崩溃）
+        var savedDict: [Int: SavedPieceState] = [:]
+        if isResuming {
+            for piece in savedSnapshot!.pieces where savedDict[piece.id] == nil {
+                savedDict[piece.id] = piece
+            }
+        }
         if isResuming {
             // 恢复本局是否已使用过辅助道具（保证"独立完成"成就判定跨中断准确）
             usedAssistProps = savedSnapshot?.usedAssistProps ?? false
@@ -328,7 +346,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
     }
 
     /// 将原图转为单色（去饱和）版本，用作极淡的半透明参考底图
-    private func makeMonoGhostImage(_ image: UIImage) -> UIImage {
+    private static func makeMonoGhostImage(_ image: UIImage) -> UIImage {
         guard let ciImage = CIImage(image: image),
               let filter = CIFilter(name: "CIPhotoEffectMono") else { return image }
         filter.setValue(ciImage, forKey: kCIInputImageKey)

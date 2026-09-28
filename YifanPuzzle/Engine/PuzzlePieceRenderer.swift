@@ -22,31 +22,40 @@ public final class PuzzlePieceRenderer {
         completion: @escaping ([Int: RenderedPieceTexture]) -> Void
     ) {
         DispatchQueue.global(qos: .userInitiated).async {
-            var result: [Int: RenderedPieceTexture] = [:]
+            // 后台只做位图渲染；SKTexture 包装必须回到主线程（真机后台创建有崩溃风险）
+            var images: [Int: (surface: UIImage, bevel: UIImage, shadow: UIImage, canvas: CGSize)] = [:]
             // 700 块超大关卡时采用 1.5x scale，节约 45% 显存并防止 iOS OOM，普通关卡保持 2.0x 高清
             let baseScale = UIScreen.main.scale
             let scale: CGFloat = pieces.count > 300 ? min(baseScale, 1.5) : baseScale
 
             for piece in pieces {
                 autoreleasepool {
-                    let rendered = renderSinglePiece(sourceImage: sourceImage, piece: piece, boardPixelSize: boardPixelSize, scale: scale)
-                    result[piece.id] = rendered
+                    images[piece.id] = renderPieceImages(sourceImage: sourceImage, piece: piece, boardPixelSize: boardPixelSize, scale: scale)
                 }
             }
 
             DispatchQueue.main.async {
+                var result: [Int: RenderedPieceTexture] = [:]
+                for (id, imgs) in images {
+                    result[id] = RenderedPieceTexture(
+                        surfaceTexture: SKTexture(image: imgs.surface),
+                        bevelThicknessTexture: SKTexture(image: imgs.bevel),
+                        shadowTexture: SKTexture(image: imgs.shadow),
+                        contentBounds: CGRect(origin: .zero, size: imgs.canvas)
+                    )
+                }
                 completion(result)
             }
         }
     }
 
-    /// 渲染单块碎片纹理
-    public static func renderSinglePiece(
+    /// 渲染单块碎片的三层位图（可在任意线程调用）
+    private static func renderPieceImages(
         sourceImage: UIImage,
         piece: PuzzlePieceData,
         boardPixelSize: CGSize,
-        scale: CGFloat = 2.0
-    ) -> RenderedPieceTexture {
+        scale: CGFloat
+    ) -> (surface: UIImage, bevel: UIImage, shadow: UIImage, canvas: CGSize) {
         let baseW = piece.normalizedSize.width * boardPixelSize.width
         let baseH = piece.normalizedSize.height * boardPixelSize.height
         let baseSize = CGSize(width: baseW, height: baseH)
@@ -135,11 +144,6 @@ public final class PuzzlePieceRenderer {
             cg.restoreGState()
         }
 
-        return RenderedPieceTexture(
-            surfaceTexture: SKTexture(image: surfaceImage),
-            bevelThicknessTexture: SKTexture(image: bevelImage),
-            shadowTexture: SKTexture(image: shadowImage),
-            contentBounds: CGRect(origin: .zero, size: canvasSize)
-        )
+        return (surfaceImage, bevelImage, shadowImage, canvasSize)
     }
 }

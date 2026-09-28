@@ -50,6 +50,16 @@ jobs:
             -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
             -quiet || true
 
+      - name: Run UI Smoke Test (launch app and enter a real game)
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project YifanPuzzle.xcodeproj \
+            -scheme YifanPuzzleUITests \
+            -destination 'platform=iOS Simulator,OS=latest' \
+            -only-testing:YifanPuzzleUITests/YifanPuzzleUITests/testAppLaunchAndEnterGame \
+            -quiet | tail -40
+
       - name: Build Archive (Unsigned)
         run: |
           xcodebuild archive \

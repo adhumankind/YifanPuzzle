@@ -118,13 +118,10 @@ public struct MainMenuView: View {
                                 .foregroundColor(MaillardTheme.deep)
                                 .frame(width: 236, height: 83)
                                 .background(
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 24).fill(MaillardTheme.goldGradient)
-                                        Image("sprite_btn_gold")
-                                            .resizable()
-                                            .scaledToFit()
-                                            .shadow(color: Color.black.opacity(0.40), radius: 10, y: 5)
-                                    }
+                                    Image("sprite_btn_gold")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .shadow(color: Color.black.opacity(0.40), radius: 10, y: 5)
                                 )
                             }
                             .buttonStyle(MaillardTheme.pressStyle)
@@ -141,13 +138,10 @@ public struct MainMenuView: View {
                                 .foregroundColor(MaillardTheme.cream)
                                 .frame(width: 236, height: 83)
                                 .background(
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 24).fill(MaillardTheme.caramelGradient)
-                                        Image("sprite_btn_brown")
-                                            .resizable()
-                                            .scaledToFit()
-                                            .shadow(color: Color.black.opacity(0.35), radius: 8, y: 4)
-                                    }
+                                    Image("sprite_btn_brown")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .shadow(color: Color.black.opacity(0.35), radius: 8, y: 4)
                                 )
                             }
                             .buttonStyle(MaillardTheme.pressStyle)

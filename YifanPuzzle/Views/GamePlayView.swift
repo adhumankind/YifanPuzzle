@@ -192,13 +192,10 @@ public struct GamePlayView: View {
                             .foregroundColor(MaillardTheme.deep)
                             .frame(width: 92, height: 32)
                             .background(
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 12).fill(MaillardTheme.goldGradient)
-                                    Image("sprite_btn_gold")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .shadow(color: Color.black.opacity(0.30), radius: 5, y: 2)
-                                }
+                                Image("sprite_btn_gold")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .shadow(color: Color.black.opacity(0.30), radius: 5, y: 2)
                             )
                         }
 

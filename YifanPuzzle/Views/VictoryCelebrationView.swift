@@ -174,12 +174,9 @@ public struct VictoryCelebrationView: View {
                         .foregroundColor(MaillardTheme.cream)
                         .frame(width: 150, height: 53)
                         .background(
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 16).fill(MaillardTheme.caramelGradient)
-                                Image("sprite_btn_brown")
-                                    .resizable()
-                                    .scaledToFit()
-                            }
+                            Image("sprite_btn_brown")
+                                .resizable()
+                                .scaledToFit()
                         )
                     }
                     .buttonStyle(MaillardTheme.pressStyle)
@@ -196,13 +193,10 @@ public struct VictoryCelebrationView: View {
                             .foregroundColor(MaillardTheme.deep)
                             .frame(width: 160, height: 56)
                             .background(
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 16).fill(MaillardTheme.goldGradient)
-                                    Image("sprite_btn_gold")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .shadow(color: Color.black.opacity(0.35), radius: 8, y: 4)
-                                }
+                                Image("sprite_btn_gold")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .shadow(color: Color.black.opacity(0.35), radius: 8, y: 4)
                             )
                         }
                         .buttonStyle(MaillardTheme.pressStyle)
@@ -219,13 +213,9 @@ public struct VictoryCelebrationView: View {
                         .foregroundColor(onNext == nil ? MaillardTheme.deep : MaillardTheme.cream)
                         .frame(width: 150, height: 53)
                         .background(
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(onNext == nil ? MaillardTheme.goldGradient : MaillardTheme.caramelGradient)
-                                Image(onNext == nil ? "sprite_btn_gold" : "sprite_btn_brown")
-                                    .resizable()
-                                    .scaledToFit()
-                            }
+                            Image(onNext == nil ? "sprite_btn_gold" : "sprite_btn_brown")
+                                .resizable()
+                                .scaledToFit()
                         )
                     }
                     .buttonStyle(MaillardTheme.pressStyle)

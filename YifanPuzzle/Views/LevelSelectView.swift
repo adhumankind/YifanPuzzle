@@ -340,14 +340,10 @@ public struct LevelSelectView: View {
                     .foregroundColor(hasResume ? MaillardTheme.cream : MaillardTheme.deep)
                     .frame(width: compact ? 210 : 240, height: compact ? 74 : 84)
                     .background(
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(hasResume ? MaillardTheme.caramelGradient : MaillardTheme.goldGradient)
-                            Image(hasResume ? "sprite_btn_brown" : "sprite_btn_gold")
-                                .resizable()
-                                .scaledToFit()
-                                .shadow(color: Color.black.opacity(0.45), radius: 12, y: 6)
-                        }
+                        Image(hasResume ? "sprite_btn_brown" : "sprite_btn_gold")
+                            .resizable()
+                            .scaledToFit()
+                            .shadow(color: Color.black.opacity(0.45), radius: 12, y: 6)
                     )
                 }
                 .padding(.bottom, 2)
