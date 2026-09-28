@@ -59,6 +59,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         super.init(size: size)
         self.scaleMode = .resizeFill
         self.backgroundColor = MaillardTheme.ui.sceneBackground
+        print("SCENE-BREADCRUMB: init done")
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -67,13 +68,21 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
 
     public override func didMove(to view: SKView) {
         super.didMove(to: view)
+        print("SCENE-BREADCRUMB: didMove begin")
         setupLayoutMetrics()
+        print("SCENE-BREADCRUMB: layout ok")
         setupBackgroundAndBoard()
+        print("SCENE-BREADCRUMB: background ok")
         setupDivider()
+        print("SCENE-BREADCRUMB: divider ok")
         setupTray()
+        print("SCENE-BREADCRUMB: tray ok")
         setupParallax()
+        print("SCENE-BREADCRUMB: parallax ok")
         buildAndDistributePieces()
+        print("SCENE-BREADCRUMB: build dispatched")
         setupGestureRecognizers(on: view)
+        print("SCENE-BREADCRUMB: didMove done")
     }
 
     public func updateSplitRatio(_ newRatio: CGFloat) {
@@ -227,6 +236,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         // 使用图片 ID 的稳定哈希作为一致性随机种子（跨启动一致，保证断点续玩碎片形状不变）
         let seed = PuzzleMeshGenerator.stableSeed(for: imageItem.id)
         self.pieceDatas = PuzzleMeshGenerator.generateGrid(columns: level.gridColumns, rows: level.gridRows, seed: seed)
+        print("SCENE-BREADCRUMB: mesh generated \(pieceDatas.count)")
 
         // 单色幽灵底图在后台线程生成（CoreImage 滤重，避免主线程卡顿与真机渲染上下文风险）
         let source = sourceImage
@@ -241,9 +251,12 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         }
 
         // 异步渲染高质量碎片 3D 贴图
+        print("SCENE-BREADCRUMB: render dispatched")
         PuzzlePieceRenderer.renderAllPieces(sourceImage: sourceImage, pieces: pieceDatas, boardPixelSize: boardRect.size) { [weak self] renderedDict in
+            print("SCENE-BREADCRUMB: render completion on main")
             guard let self = self else { return }
             self.distributePiecesInPile(renderedDict: renderedDict)
+            print("SCENE-BREADCRUMB: pieces distributed")
         }
     }
 

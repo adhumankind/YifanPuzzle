@@ -513,6 +513,7 @@ public struct GamePlayView: View {
     // MARK: - 场景构建与流转
 
     private func setupScene(size: CGSize) {
+        print("GAMEVIEW-BREADCRUMB: setupScene begin")
         guard size.width > 0 && size.height > 0 else { return }
         let img = PuzzleImageRepository.shared.loadImage(for: currentImageItem) ?? PuzzleImageRepository.generateFallbackImage(title: currentImageItem.title)
         let s = PuzzleGameScene(size: size, imageItem: currentImageItem, level: currentLevel, sourceImage: img)
@@ -554,6 +555,7 @@ public struct GamePlayView: View {
         }
 
         self.scene = s
+        print("GAMEVIEW-BREADCRUMB: scene assigned")
     }
 
     private func nextAvailablePuzzleParams() -> (PuzzleImageItem, PuzzleLevel)? {
