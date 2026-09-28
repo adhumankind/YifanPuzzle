@@ -454,13 +454,15 @@ public struct GamePlayView: View {
     // MARK: - 胜利结算浮层
 
     private func victoryOverlay(proxy: GeometryProxy) -> some View {
-        VictoryCelebrationView(
+        let next = nextAvailablePuzzleParams()
+        return VictoryCelebrationView(
             imageItem: currentImageItem,
             level: currentLevel,
             elapsedTime: finalElapsed,
             newAchievements: scene?.newlyEarnedAchievements ?? [],
             usedAssistProps: scene?.usedAssistProps ?? false,
-            onNext: nextAvailablePuzzleParams().map { nextItem, nextLvl in
+            nextItem: next?.0,
+            onNext: next.map { nextItem, nextLvl in
                 {
                     switchToNextPuzzle(item: nextItem, level: nextLvl, size: proxy.size)
                 }
@@ -479,7 +481,18 @@ public struct GamePlayView: View {
 
     private var loadingOverlay: some View {
         ZStack {
-            MaillardTheme.deep.ignoresSafeArea()
+            // 胡桃木纹垫底 + 深棕罩层，与对局视觉统一
+            GeometryReader { bg in
+                ZStack {
+                    Image("maillard_board")
+                        .resizable()
+                        .scaledToFill()
+                }
+                .frame(width: bg.size.width, height: bg.size.height)
+                .clipped()
+                .overlay(MaillardTheme.deep.opacity(0.86))
+                .ignoresSafeArea()
+            }
 
             VStack(spacing: 16) {
                 ProgressView()

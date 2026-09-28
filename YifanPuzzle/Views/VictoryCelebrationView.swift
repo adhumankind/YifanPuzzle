@@ -7,6 +7,7 @@ public struct VictoryCelebrationView: View {
     public let elapsedTime: TimeInterval
     public let newAchievements: [ProgressManager.Achievement]
     public let usedAssistProps: Bool
+    public let nextItem: PuzzleImageItem?
     public let onNext: (() -> Void)?
     public let onReplay: () -> Void
     public let onBack: () -> Void
@@ -20,6 +21,7 @@ public struct VictoryCelebrationView: View {
         elapsedTime: TimeInterval,
         newAchievements: [ProgressManager.Achievement] = [],
         usedAssistProps: Bool = false,
+        nextItem: PuzzleImageItem? = nil,
         onNext: (() -> Void)? = nil,
         onReplay: @escaping () -> Void,
         onBack: @escaping () -> Void
@@ -29,6 +31,7 @@ public struct VictoryCelebrationView: View {
         self.elapsedTime = elapsedTime
         self.newAchievements = newAchievements
         self.usedAssistProps = usedAssistProps
+        self.nextItem = nextItem
         self.onNext = onNext
         self.onReplay = onReplay
         self.onBack = onBack
@@ -37,7 +40,7 @@ public struct VictoryCelebrationView: View {
     public var body: some View {
         GeometryReader { geo in
             // 小屏（如 SE 横屏 375pt 高）下整体等比缩小，保证按钮永远完整可见
-            let fitScale = min(1.0, geo.size.height / 500.0)
+            let fitScale = min(1.0, geo.size.height / 560.0)
             ZStack {
                 Color.black.opacity(0.72).ignoresSafeArea()
 
@@ -128,6 +131,36 @@ public struct VictoryCelebrationView: View {
                         .font(.system(size: 11, weight: usedAssistProps ? .regular : .bold))
                 }
                 .foregroundColor(usedAssistProps ? MaillardTheme.muted : MaillardTheme.gold)
+
+                // 下一幅预告（有下一关时展示缩略图勾起期待）
+                if let nextItem = nextItem {
+                    HStack(spacing: 10) {
+                        if let uiImg = PuzzleImageRepository.shared.loadImage(for: nextItem) {
+                            Image(uiImage: uiImg)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 84, height: 48)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(MaillardTheme.gold.opacity(0.35), lineWidth: 1)
+                                )
+                        }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("下一幅预告")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(MaillardTheme.gold)
+                            Text(nextItem.title)
+                                .font(.system(size: 14, weight: .bold, design: .serif))
+                                .foregroundColor(MaillardTheme.cream)
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(MaillardTheme.warmGlass)
+                    .cornerRadius(10)
+                }
 
                 HStack(spacing: 16) {
                     Button {
