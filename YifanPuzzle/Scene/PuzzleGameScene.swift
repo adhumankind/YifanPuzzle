@@ -44,6 +44,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
     // 外部回调
     public var onProgressUpdate: ((Int, Int) -> Void)? // (已拼好数, 总数)
     public var onPiecesReady: (() -> Void)? // 碎片切片与贴图全部构建完成就绪
+    public var onAchievementsUnlocked: (([ProgressManager.Achievement]) -> Void)? // 成就解锁即时提示
     public var onGameCompleted: ((TimeInterval) -> Void)?
 
     // 计时器与完成标记
@@ -616,6 +617,9 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
                 levelId: level.id,
                 usedAssistProps: usedAssistProps
             )
+            if !newlyEarnedAchievements.isEmpty {
+                onAchievementsUnlocked?(newlyEarnedAchievements)
+            }
             GameFeedbackEngine.shared.triggerVictory()
             celebrateCompletion()
             // 彩带先飘 0.9 秒让玩家看清满屏庆祝，再淡入结算弹窗（弱引用防止场景销毁后回调）

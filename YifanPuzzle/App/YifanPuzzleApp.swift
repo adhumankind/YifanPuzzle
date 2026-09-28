@@ -19,7 +19,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {
-        // 当用户接听电话或切至桌面后台时，确保触发存档持久化同步
-        UserDefaults.standard.synchronize()
+        // 进入后台时 UserDefaults 由系统自动落盘（synchronize 已废弃）；
+        // 对局进度的持久化由场景在每次吸附/收纳事件时即时完成。
     }
 }

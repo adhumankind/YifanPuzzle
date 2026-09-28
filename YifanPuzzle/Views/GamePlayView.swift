@@ -19,6 +19,7 @@ public struct GamePlayView: View {
     @State private var finalElapsed: TimeInterval = 0
     @State private var isUnderlayOn: Bool = GameSettings.shared.showGhostOutline
     @State private var showGuide = !UserDefaults.standard.bool(forKey: "com.yifan.puzzle.guide_seen")
+    @State private var achievementToast: [ProgressManager.Achievement] = []
 
     // 内部持有的 SpriteKit 游戏场景
     @State private var scene: PuzzleGameScene? = nil
@@ -59,6 +60,14 @@ public struct GamePlayView: View {
                 .onChange(of: GameSettings.shared.parallax3DEnabled) { enabled in
                     scene?.applyParallaxSettingChanged(enabled: enabled)
                 }
+                .onChange(of: showingVictory) { showing in
+                    // 胜利卡弹出时淡出成就浮条（结算页成就墙接力展示）
+                    if showing {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            achievementToast = []
+                        }
+                    }
+                }
                 .onChange(of: scenePhase) { phase in
                     switch phase {
                     case .active:
@@ -95,6 +104,12 @@ public struct GamePlayView: View {
             // 首次进入对局的轻量引导浮层（加载完成后才出现；轻点任意处或 7 秒后自动淡出）
             if showGuide && !isLoadingPieces {
                 guideOverlay
+            }
+
+            // 成就解锁即时浮条（彩带窗口期展示，胜利卡弹出前淡出）
+            if !achievementToast.isEmpty {
+                achievementToastView
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
 
             // 原图高清浮层弹窗
@@ -360,6 +375,42 @@ public struct GamePlayView: View {
         UserDefaults.standard.set(true, forKey: "com.yifan.puzzle.guide_seen")
     }
 
+    // MARK: - 成就解锁即时浮条
+
+    private var achievementToastView: some View {
+        VStack(spacing: 8) {
+            ForEach(achievementToast, id: \.rawValue) { achievement in
+                HStack(spacing: 10) {
+                    Image(achievement.spriteName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 30)
+                        .shadow(color: Color.black.opacity(0.4), radius: 4)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("解锁成就")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(MaillardTheme.gold)
+                        Text(achievement.title)
+                            .font(.system(size: 16, weight: .bold, design: .serif))
+                            .foregroundColor(MaillardTheme.cream)
+                    }
+                }
+                .padding(.horizontal, 18)
+                .padding(.vertical, 10)
+                .background(MaillardTheme.espresso.opacity(0.95))
+                .cornerRadius(14)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(MaillardTheme.gold.opacity(0.4), lineWidth: 1)
+                )
+                .shadow(color: Color.black.opacity(0.45), radius: 10, y: 4)
+            }
+        }
+        .padding(.top, max(56, 10))
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .allowsHitTesting(false)
+    }
+
     // MARK: - 原图高清浮层弹窗
 
     private func previewOverlay(proxy: GeometryProxy) -> some View {
@@ -475,6 +526,13 @@ public struct GamePlayView: View {
             _ = s
             withAnimation(.easeInOut(duration: 0.3)) {
                 self.isLoadingPieces = false
+            }
+        }
+
+        s.onAchievementsUnlocked = { [weak s] list in
+            _ = s
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                self.achievementToast = list
             }
         }
 
