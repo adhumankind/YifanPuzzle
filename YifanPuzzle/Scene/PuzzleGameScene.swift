@@ -89,8 +89,10 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         currentSplitRatio = newRatio
         setupLayoutMetrics()
         boardBackgroundNode.path = UIBezierPath(roundedRect: boardRect, cornerRadius: 8).cgPath
-        ghostImageNode.size = boardRect.size
-        ghostImageNode.position = CGPoint(x: boardRect.midX, y: boardRect.midY)
+        if let ghost = ghostImageNode {
+            ghost.size = boardRect.size
+            ghost.position = CGPoint(x: boardRect.midX, y: boardRect.midY)
+        }
         boardOutlineNode.path = UIBezierPath(roundedRect: boardRect, cornerRadius: 8).cgPath
 
         // 更新所有已拼好碎片与理论板位的锚定坐标
@@ -145,11 +147,11 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         // 胡桃木纹桌面材质（GPT 生成，按 cover 等比铺满避免拉伸变形）
         let woodTexture = SKTexture(imageNamed: "maillard_board")
         let woodTexSize = woodTexture.size()
-        if woodTexSize.width > 0 && woodTexSize.height > 0 {
-            let coverScale = max(size.width / woodTexSize.width, size.height / woodTexSize.height)
+        let woodCoverScale = (woodTexSize.width > 0 && woodTexSize.height > 0) ? max(size.width / woodTexSize.width, size.height / woodTexSize.height) : 0
+        if woodCoverScale > 0 {
             let woodNode = SKSpriteNode(
                 texture: woodTexture,
-                size: CGSize(width: woodTexSize.width * coverScale, height: woodTexSize.height * coverScale)
+                size: CGSize(width: woodTexSize.width * woodCoverScale, height: woodTexSize.height * woodCoverScale)
             )
             woodNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
             woodNode.zPosition = -9
@@ -166,12 +168,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         boardBackgroundNode.zPosition = 1
         addChild(boardBackgroundNode)
 
-        // 幽灵参考底图：先占位，单色（去饱和）版本在后台线程生成后换装淡入
-        ghostImageNode = SKSpriteNode(texture: nil, color: .clear, size: boardRect.size)
-        ghostImageNode.position = CGPoint(x: boardRect.midX, y: boardRect.midY)
-        ghostImageNode.zPosition = 2
-        ghostImageNode.alpha = GameSettings.shared.showGhostOutline ? 0.14 : 0.0
-        addChild(ghostImageNode)
+        // 幽灵参考底图：完全延迟到后台单色图就绪后再创建（nil 纹理的占位初始化在真机会抛 NSException）
 
         // 拼图边缘外框线
         boardOutlineNode = SKShapeNode(rect: boardRect, cornerRadius: 8)
@@ -243,8 +240,18 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let mono = Self.makeMonoGhostImage(source)
             DispatchQueue.main.async {
-                guard let self = self, let ghost = self.ghostImageNode else { return }
-                ghost.texture = SKTexture(image: mono)
+                guard let self = self, self.size.width > 0, self.size.height > 0 else { return }
+                let ghost: SKSpriteNode
+                if let existing = self.ghostImageNode {
+                    ghost = existing
+                    ghost.texture = SKTexture(image: mono)
+                } else {
+                    ghost = SKSpriteNode(texture: SKTexture(image: mono), size: self.boardRect.size)
+                    ghost.position = CGPoint(x: self.boardRect.midX, y: self.boardRect.midY)
+                    ghost.zPosition = 2
+                    self.ghostImageNode = ghost
+                    self.addChild(ghost)
+                }
                 let target: CGFloat = GameSettings.shared.showGhostOutline ? 0.14 : 0.0
                 ghost.run(SKAction.fadeAlpha(to: target, duration: 0.25))
             }
