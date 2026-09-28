@@ -241,12 +241,17 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
             let mono = Self.makeMonoGhostImage(source)
             DispatchQueue.main.async {
                 guard let self = self, self.size.width > 0, self.size.height > 0 else { return }
+                var ghostSize = self.boardRect.size
+                if ghostSize.width <= 0 || ghostSize.height <= 0 {
+                    ghostSize = self.size
+                }
+                guard ghostSize.width > 0 && ghostSize.height > 0 else { return }
                 let ghost: SKSpriteNode
                 if let existing = self.ghostImageNode {
                     ghost = existing
                     ghost.texture = SKTexture(image: mono)
                 } else {
-                    ghost = SKSpriteNode(texture: SKTexture(image: mono), size: self.boardRect.size)
+                    ghost = SKSpriteNode(texture: SKTexture(image: mono), size: ghostSize)
                     ghost.position = CGPoint(x: self.boardRect.midX, y: self.boardRect.midY)
                     ghost.zPosition = 2
                     self.ghostImageNode = ghost
