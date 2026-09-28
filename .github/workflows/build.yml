@@ -47,7 +47,7 @@ jobs:
           xcodebuild test \
             -project YifanPuzzle.xcodeproj \
             -scheme YifanPuzzleTests \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
             -quiet || true
 
       - name: Run UI Smoke Test (launch app and enter a real game)
@@ -56,7 +56,7 @@ jobs:
           xcodebuild test \
             -project YifanPuzzle.xcodeproj \
             -scheme YifanPuzzleUITests \
-            -destination 'platform=iOS Simulator,OS=latest' \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
             -only-testing:YifanPuzzleUITests/YifanPuzzleUITests/testAppLaunchAndEnterGame \
             -quiet | tail -40
 
