@@ -42,13 +42,15 @@ jobs:
           grep "objectVersion" YifanPuzzle.xcodeproj/project.pbxproj
           ls -la YifanPuzzle.xcodeproj
 
-      - name: Run Unit Tests
+      - name: Run Scene Setup Canary (enter-game crash canary, full log)
         run: |
+          set -o pipefail
           xcodebuild test \
             -project YifanPuzzle.xcodeproj \
             -scheme YifanPuzzleTests \
             -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
-            -quiet || true
+            -only-testing:YifanPuzzleTests/PuzzleCoreLogicTests/testGameSceneFullSetupDoesNotCrash \
+            2>&1 | tail -120
 
       - name: Run UI Smoke Test (launch app and enter a real game)
         run: |
