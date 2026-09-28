@@ -1,3 +1,4 @@
+import SpriteKit
 import XCTest
 @testable import YifanPuzzle
 
@@ -126,5 +127,31 @@ final class PuzzleCoreLogicTests: XCTestCase {
         measure {
             _ = PuzzleMeshGenerator.generateGrid(columns: 35, rows: 20, seed: 424242)
         }
+    }
+
+    func testGameSceneFullSetupDoesNotCrash() {
+        // 金丝雀回归：真机"点击开始拼图"后闪退；此处完整走一遍进局搭建（含异步切片/托盘/木纹底）
+        let items = PuzzleImageRepository.shared.allItems()
+        guard let item = items.first,
+              let image = PuzzleImageRepository.shared.loadImage(for: item) else {
+            XCTFail("图库不可用")
+            return
+        }
+        let level = PuzzleConfig.default.levels[0]
+        let scene = PuzzleGameScene(size: CGSize(width: 800, height: 375),
+                                    imageItem: item,
+                                    level: level,
+                                    sourceImage: image)
+
+        let view = SKView()
+        view.frame = CGRect(origin: .zero, size: CGSize(width: 800, height: 375))
+        view.presentScene(scene) // 触发 didMove 全套搭建
+
+        let ready = expectation(description: "onPiecesReady")
+        scene.onPiecesReady = { ready.fulfill() }
+        wait(for: [ready], timeout: 30)
+
+        // 收尾：清掉测试产生的对局存档，避免污染其他用例
+        SessionSaveManager.shared.clear()
     }
 }
