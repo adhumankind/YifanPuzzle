@@ -32,6 +32,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
     private var dragStartTouchPoint: CGPoint = .zero
     private var dragStartPiecePositions: [Int: CGPoint] = [:]
     private var isDraggingDivider: Bool = false
+    private var dragMoved: Bool = false
     private var highestZIndex: CGFloat = 100
     private var rotationGestureRecognizer: UIRotationGestureRecognizer?
     private var trayPressRecognizer: UILongPressGestureRecognizer?
@@ -409,6 +410,8 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
 
     @objc private func handleTrayLongPress(_ gesture: UILongPressGestureRecognizer) {
         guard gesture.state == .began, let skView = gesture.view else { return }
+        // 正在拖动碎片或分隔条时，不触发一键收拢
+        guard activeDraggedPieces.isEmpty, !isDraggingDivider else { return }
         // 手势坐标在 UIKit 视图坐标系，需转换为 SpriteKit 场景坐标系
         let scenePoint = convertPoint(fromView: gesture.location(in: skView))
         if trayNode.containsWorldPoint(scenePoint) {
@@ -437,39 +440,36 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         guard let touch = touches.first else { return }
         let touchLocation = touch.location(in: self)
 
-        // 1. 判断是否触摸到区域滑块
-        if abs(touchLocation.x - dividerNode.position.x) < 25 {
-            isDraggingDivider = true
+        // 1. 优先拾取托盘中的碎片（托盘位于屏幕底部，命中范围小，先于桌面判定）
+        var trayHit: PuzzlePieceNode? = nil
+        for piece in pieceNodes.values where piece.traySlotIndex != nil {
+            if piece.contains(touchLocation) {
+                trayHit = piece
+                break
+            }
+        }
+        if let piece = trayHit {
+            trayNode.removePiece(fromSlot: piece.traySlotIndex!)
+            highestZIndex += 10
+            piece.zPosition = highestZIndex
+            piece.animatePickup()
+            GameFeedbackEngine.shared.triggerPickup()
+            setGhostBoost(true)
+            beginDragging(pieces: [piece], at: touchLocation)
             return
         }
 
-        // 2. 判断是否点击托盘中的碎片
-        for piece in pieceNodes.values where piece.traySlotIndex != nil {
-            if piece.contains(touchLocation) {
-                trayNode.removePiece(fromSlot: piece.traySlotIndex!)
-                highestZIndex += 10
-                piece.zPosition = highestZIndex
-                piece.animatePickup()
-                GameFeedbackEngine.shared.triggerPickup()
-                setGhostBoost(true)
-                beginDragging(pieces: [piece], at: touchLocation)
-                return
-            }
-        }
-
-        // 3. 拾取桌面上的拼图碎片（选取顶层未拼好的碎片，带同组联动）
+        // 2. 拾取桌面上的拼图碎片：重叠时取视觉最顶层（zPosition 最高）的未拼好碎片
         let touchedNodes = nodes(at: touchLocation)
-        var hitPiece: PuzzlePieceNode? = nil
-
+        var candidates: [PuzzlePieceNode] = []
         for n in touchedNodes {
-            if let p = n as? PuzzlePieceNode, !p.isPlaced {
-                hitPiece = p
-                break
-            } else if let p = n.parent as? PuzzlePieceNode, !p.isPlaced {
-                hitPiece = p
-                break
+            if let p = n as? PuzzlePieceNode, !p.isPlaced, !candidates.contains(where: { $0 === p }) {
+                candidates.append(p)
+            } else if let parent = n.parent, let p = parent as? PuzzlePieceNode, !p.isPlaced, !candidates.contains(where: { $0 === p }) {
+                candidates.append(p)
             }
         }
+        let hitPiece = candidates.max(by: { $0.zPosition < $1.zPosition })
 
         if let piece = hitPiece {
             // 找出属于同一 groupId 的所有已咬合联动的碎片一起拖动
@@ -482,6 +482,14 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
             GameFeedbackEngine.shared.triggerPickup()
             setGhostBoost(true)
             beginDragging(pieces: groupPieces, at: touchLocation)
+            return
+        }
+
+        // 3. 未命中任何碎片时，仅当按在分隔条手柄附近才拖动滑块（避免误抢碎片拖拽）
+        let handleY = size.height / 2
+        if abs(touchLocation.x - dividerNode.position.x) < 30 && abs(touchLocation.y - handleY) < 30 {
+            isDraggingDivider = true
+            return
         }
     }
 
@@ -489,6 +497,7 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         activeDraggedPieces = pieces
         dragStartTouchPoint = point
         dragStartPiecePositions.removeAll()
+        dragMoved = false
 
         // 拿起放大（1.0→1.06）会让手指下的纹理点向外漂移，反向补偿位置使大碎片也严丝合缝跟手
         if let primary = pieces.first {
@@ -527,6 +536,10 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
         guard !activeDraggedPieces.isEmpty else { return }
         let deltaX = touchLocation.x - dragStartTouchPoint.x
         let deltaY = touchLocation.y - dragStartTouchPoint.y
+
+        if abs(deltaX) > 2 || abs(deltaY) > 2 {
+            dragMoved = true
+        }
 
         for piece in activeDraggedPieces {
             if let startPos = dragStartPiecePositions[piece.pieceData.id] {
@@ -572,6 +585,14 @@ public final class PuzzleGameScene: SKScene, UIGestureRecognizerDelegate {
                 saveCurrentSession()
                 return
             }
+        }
+
+        // 纯点按未拖动：不做吸附/合并，避免无谓落盘（托盘点按回槽已在上方处理）
+        if !dragMoved {
+            for piece in dragged {
+                piece.animateDrop()
+            }
+            return
         }
 
         // B. 检查是否与正确板位磁吸
